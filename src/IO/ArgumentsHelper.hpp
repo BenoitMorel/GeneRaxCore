@@ -127,8 +127,8 @@ public:
       return "NONE";
     case TransferConstaint::PARENTS:
       return "PARENTS";
-    case TransferConstaint::SOFTDATED:
-      return "SOFTDATED";
+    case TransferConstaint::RELDATED:
+      return "RELDATED";
     }
     exit(41);
   }
@@ -138,8 +138,8 @@ public:
       return TransferConstaint::NONE;
     } else if (str == "PARENTS") {
       return TransferConstaint::PARENTS;
-    } else if(str == "SOFTDATED") {
-      return TransferConstaint::SOFTDATED;
+    } else if(str == "RELDATED") {
+      return TransferConstaint::RELDATED;
     } else {
       Logger::info << "Invalid transfer constraint " << str << std::endl;
       exit(41);

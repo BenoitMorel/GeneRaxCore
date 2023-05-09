@@ -45,7 +45,7 @@ enum class SpeciesSearchStrategy {
  *  Transfer constraint
  */
 enum class TransferConstaint {
-  NONE, PARENTS, SOFTDATED
+  NONE, PARENTS, RELDATED
 };
 
 enum class OriginationStrategy {

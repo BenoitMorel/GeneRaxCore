@@ -121,7 +121,7 @@ private:
       return (_dtlclvs[geneId]._survivingTransferSums
           - _dtlclvs[geneId]._correctionSum[speciesId])
         * _PT[speciesId];
-    case TransferConstaint::SOFTDATED:
+    case TransferConstaint::RELDATED:
       return _dtlclvs[geneId]._correctionSum[speciesId]
         * _PT[speciesId];
     default:
@@ -188,7 +188,7 @@ UndatedDTLModel<REAL>::~UndatedDTLModel() { }
 template <class REAL>
 void UndatedDTLModel<REAL>::recomputeSpeciesProbabilities()
 {
-  if (_transferConstraint == TransferConstaint::SOFTDATED) {
+  if (_transferConstraint == TransferConstaint::RELDATED) {
     _orderedSpeciations = this->_speciesTree.getOrderedSpeciations();  
     _orderedSpeciesRanks.resize(this->_speciesTree.getNodeNumber());
     unsigned int rank = 0;
@@ -231,7 +231,7 @@ void UndatedDTLModel<REAL>::recomputeSpeciesProbabilities()
         auto e = speciesNode->node_index;
         transferExtinctionSums[e] = transferExtinctionSum;
       }
-    } else if (this->_transferConstraint == TransferConstaint::SOFTDATED) {
+    } else if (this->_transferConstraint == TransferConstaint::RELDATED) {
       std::vector<double> softDatedSums(N, 0.0);
       double softDatedSum = 0.0;
       for (auto leaf: this->_speciesTree.getLeaves()) {
@@ -301,7 +301,7 @@ void UndatedDTLModel<REAL>::updateCLV(corax_unode_t *geneNode)
       correctionSum[e] /= N;
     }
   }
-  if (_transferConstraint == TransferConstaint::SOFTDATED) {
+  if (_transferConstraint == TransferConstaint::RELDATED) {
     std::vector<REAL> softDatedSums(N, REAL());
     std::vector<double> possibleTransfers(N, REAL());
     double currentPossibleTransfers = static_cast<double>(this->_speciesTree.getLeafNumber()) - 1.0;
@@ -583,7 +583,7 @@ void UndatedDTLModel<REAL>::getBestTransfer(corax_unode_t *parentGeneNode,
         continue;
       }
     }
-    if (_transferConstraint == TransferConstaint::SOFTDATED) {
+    if (_transferConstraint == TransferConstaint::RELDATED) {
       if (originSpeciesNode->parent) {
         auto p = originSpeciesNode->parent->node_index;
         if (_orderedSpeciesRanks[p] >= _orderedSpeciesRanks[h]) {

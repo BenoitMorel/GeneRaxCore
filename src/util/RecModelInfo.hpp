@@ -159,6 +159,6 @@ struct RecModelInfo {
   }
 
   bool isDated() const {
-    return transferConstraint == TransferConstaint::SOFTDATED;
+    return transferConstraint == TransferConstaint::RELDATED;
   }
 };
