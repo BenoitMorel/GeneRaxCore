@@ -27,7 +27,7 @@ static bool update_family(const std::string &line,
   std::string value = line.substr(delim_pos + 1, line.size() - delim_pos);
   if (key == "alignment") {
     currentFamily.alignmentFile = value;
-  } else if (key == "starting_gene_tree") {
+  } else if (key == "starting_gene_tree" || key == "gene_tree") {
     currentFamily.startingGeneTree = value;
   } else if (key == "likelihoods") {
     currentFamily.likelihoodFile = value;
