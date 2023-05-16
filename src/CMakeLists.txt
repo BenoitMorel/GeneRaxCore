@@ -14,7 +14,6 @@ set(generaxcore_SOURCES
   IO/GeneSpeciesMapping.cpp
   IO/FamiliesFileParser.cpp
   IO/LibpllParsers.cpp
-  IO/Model.cpp
   IO/ParallelOfstream.cpp
   IO/ReconciliationWriter.cpp
   likelihoods/LibpllEvaluation.cpp

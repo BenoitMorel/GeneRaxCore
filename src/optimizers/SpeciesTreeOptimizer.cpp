@@ -111,6 +111,7 @@ void SpeciesTreeOptimizer::optimize(SpeciesSearchStrategy strategy)
       hash1 = _speciesTree->getHash();
     }
     while(testAndSwap(hash1, hash2));
+    _searchState.bestLL = _evaluator.optimizeModelRates(true);
     rootSearch(_searchParams.rootBigRadius, true);
     break;
   case SpeciesSearchStrategy::REROOT:
