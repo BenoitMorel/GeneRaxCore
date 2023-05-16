@@ -23,10 +23,12 @@ void PerCorePotentialTransfers::addScenario(const Scenario &scenario)
 unsigned int PerCorePotentialTransfers::getPotentialTransfers(unsigned int src, unsigned int dest)
 {
   unsigned int res = 0;
-  assert(copies[src].size() == copies[dest].size());
-  for (unsigned int fam = 0; fam < copies[src].size(); ++fam) {
-    if (copies[dest][fam]) {
-      res += copies[src][fam];
+  if (copies.size()) {
+    assert(copies[src].size() == copies[dest].size());
+    for (unsigned int fam = 0; fam < copies[src].size(); ++fam) {
+      if (copies[dest][fam]) {
+        res += copies[src][fam];
+      }
     }
   }
   ParallelContext::sumUInt(res);
