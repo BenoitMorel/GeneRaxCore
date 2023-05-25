@@ -3,4 +3,4 @@
 	url = https://codeberg.org/Exelixis-Lab/coraxlib.git
 [submodule "ext/MPIScheduler"]
 	path = ext/MPIScheduler
-	url = git@github.com:BenoitMorel/MPIScheduler.git
+	url = https://github.com/BenoitMorel/MPIScheduler.git
