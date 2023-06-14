@@ -46,18 +46,18 @@ bool GeneSpeciesMapping::check(const std::unordered_set<std::string> &geneLeaves
     auto &gene = pair.first;
     auto &species = pair.second;
     if (geneLeaves.find(gene) == geneLeaves.end()) {
-      std::cerr << "[Error] Invalid mapping " << gene << "<->" << species << ": can't find the gene " << gene << " in the gene tree" << std::endl;
+      std::cerr << "[Error] Invalid mapping '" << gene << "' <-> '" << species << "': can't find the gene '" << gene << "' in the gene tree" << std::endl;
       ok = false;
     }
     if (speciesLeaves.find(species) == speciesLeaves.end()) {
-      std::cerr << "[Error] Invalid mapping " << gene << "<->" << species << ": can't find the species " << species << " in the species tree" << std::endl;
+      std::cerr << "[Error] Invalid mapping '" << gene << "' <-> '" << species << "': can't find the species '" << species << "' in the species tree" << std::endl;
       ok = false;
     }
   }
   for (auto &gene: geneLeaves) {
     auto speciesIt = getMap().find(gene);
     if (speciesIt == getMap().end()) {
-      std::cerr << "[Error] Gene tree leaf " << gene << " is not mapped to any species" << std::endl;
+      std::cerr << "[Error] Gene tree leaf '" << gene << "' is not mapped to any species" << std::endl;
       ok = false;
     }
   }

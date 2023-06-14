@@ -102,14 +102,14 @@ static FamilyErrorCode filterFamily(const FamilyInfo &family, const std::unorder
         std::cerr << "Absent in the gene tree: ";
         for (auto &l: alignmentLabels) {
           if (geneTreeLabels.find(l) == geneTreeLabels.end()) {
-            std::cerr << l << " ";
+            std::cerr << "'" << l << "' ";
           }
         }
         std::cerr << std::endl;
         std::cerr << "Absent in the alignment: ";
         for (auto &l: geneTreeLabels) {
           if (alignmentLabels.find(l) == alignmentLabels.end()) {
-            std::cerr << l << " ";
+            std::cerr << "'" << l << "' ";
           }
         }
         std::cerr << std::endl;
