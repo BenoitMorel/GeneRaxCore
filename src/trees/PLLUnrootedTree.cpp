@@ -75,10 +75,7 @@ std::unique_ptr<PLLUnrootedTree> PLLUnrootedTree::buildFromStrOrFile(const std::
   try {
     res = std::make_unique<PLLUnrootedTree>(strOrFile, true);
   } catch (...) {
-    try {
-    } catch (...) {
-      res = std::make_unique<PLLUnrootedTree>(strOrFile, false);
-    }
+    res = std::make_unique<PLLUnrootedTree>(strOrFile, false);
   }
   return res;
 }
