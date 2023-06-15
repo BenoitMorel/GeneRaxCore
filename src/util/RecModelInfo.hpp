@@ -20,6 +20,7 @@ struct RecModelInfo {
   // tree the taxa that are not covered in this family
   bool pruneSpeciesTree;
   bool rootedGeneTree;
+  bool madRooting;
   // if the reconciliaiton model accounts for polytomies, branches
   // with a lenghts <= branchLengthThreshold are be contracted
   double branchLengthThreshold;
@@ -42,8 +43,9 @@ struct RecModelInfo {
     originationStrategy(OriginationStrategy::ROOT),
     pruneSpeciesTree(true),
     rootedGeneTree(true),
+    madRooting(false),
     branchLengthThreshold(-1.0),
-    transferConstraint(TransferConstaint::NONE),
+    transferConstraint(TransferConstaint::PARENTS),
     noDup(false),
     noTL(false)
   {
@@ -56,6 +58,7 @@ struct RecModelInfo {
       OriginationStrategy originationStrategy,
       bool pruneSpeciesTree,
       bool rootedGeneTree,
+      bool madRooting,
       double branchLengthThreshold,
       TransferConstaint transferConstraint,
       bool noDup,
@@ -67,6 +70,7 @@ struct RecModelInfo {
     originationStrategy(originationStrategy),
     pruneSpeciesTree(pruneSpeciesTree),
     rootedGeneTree(rootedGeneTree),
+    madRooting(madRooting),
     branchLengthThreshold(branchLengthThreshold),
     transferConstraint(transferConstraint),
     noDup(noDup),
@@ -84,6 +88,7 @@ struct RecModelInfo {
     originationStrategy = Enums::strToOrigination(argv[i++]);
     pruneSpeciesTree = bool(atoi(argv[i++]));
     rootedGeneTree = bool(atoi(argv[i++]));
+    madRooting = bool(atoi(argv[i++]));
     std::string con = argv[i++];
     transferConstraint = ArgumentsHelper::strToTransferConstraint(con);
     noDup = bool(atoi(argv[i++]));
@@ -104,6 +109,7 @@ struct RecModelInfo {
     argv.push_back(Enums::originationToStr(originationStrategy));
     argv.push_back(std::to_string(static_cast<int>(pruneSpeciesTree)));
     argv.push_back(std::to_string(static_cast<int>(rootedGeneTree)));
+    argv.push_back(std::to_string(static_cast<int>(madRooting)));
     argv.push_back(ArgumentsHelper::transferConstraintToStr(transferConstraint));
     argv.push_back(std::to_string(static_cast<int>(noDup)));
     argv.push_back(std::to_string(static_cast<int>(noTL)));
@@ -118,7 +124,7 @@ struct RecModelInfo {
 
   static int getArgc() 
   {
-    return 11;
+    return 12;
   }
 
   unsigned int modelFreeParameters() const {

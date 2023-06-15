@@ -229,16 +229,9 @@ void JointTree::rollbackLastMove() {
 }
 
 void JointTree::save(const std::string &fileName, bool append) {
-  if (_madRooting) {
-    reconciliationEvaluation_->enableMADRooting(true);
-    reconciliationEvaluation_->inferMLRoot();
-  }
   auto root = reconciliationEvaluation_->getRoot();
   if (!root) {
     root = reconciliationEvaluation_->inferMLRoot();
-  }
-  if (_madRooting) {
-    reconciliationEvaluation_->enableMADRooting(false);
   }
   assert(root);
   std::ofstream os;

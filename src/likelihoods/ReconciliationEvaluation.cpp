@@ -71,11 +71,6 @@ double ReconciliationEvaluation::evaluate()
   return _evaluators->computeLogLikelihood();
 }
   
-void ReconciliationEvaluation::enableMADRooting(bool enable)
-{
-  _evaluators->enableMADRooting(enable);
-}
-
 void ReconciliationEvaluation::invalidateCLV(unsigned int nodeIndex)
 {
   _evaluators->invalidateCLV(nodeIndex);
