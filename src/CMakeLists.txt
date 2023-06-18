@@ -47,6 +47,7 @@ set(generaxcore_SOURCES
   search/SpeciesSPRSearch.cpp
   search/SpeciesTransferSearch.cpp
   search/SPRSearch.cpp
+  search/UFBoot.cpp
   search/UNNISearch.cpp
   search/DatedSpeciesTreeSearch.cpp
   support/ICCalculator.cpp

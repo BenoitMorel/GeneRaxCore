@@ -115,6 +115,11 @@ public:
   void ensureUniqueLabels();
 
   /**
+   *  Change the label of the node indexed with nodeIndex
+   */
+  void setLabel(unsigned int nodeIndex, const std::string &label);
+
+  /**
    *  Direct access to the libpll structure
    */
   corax_rtree_t *getRawPtr() {return _tree.get();}

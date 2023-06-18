@@ -8,6 +8,9 @@ bool SpeciesSPRSearch::SPRRound(SpeciesTree &speciesTree,
   SpeciesSearchState &searchState,
   unsigned int radius)
 {
+  for (auto &boot: searchState.sprBoots) {
+    boot.reset();  
+  }
   Logger::timed << "[Species search] Start SPR Round radius=" << radius << std::endl;
   auto hash1 = speciesTree.getNodeIndexHash(); 
   auto supportValues = std::vector<double>();//_getSupport();
@@ -18,6 +21,15 @@ bool SpeciesSPRSearch::SPRRound(SpeciesTree &speciesTree,
       supportValues,
       maxSupport);
   bool better = false;
+  PerFamLL perFamLL;
+  evaluation.computeLikelihood(&perFamLL);
+  std::vector<unsigned int> affectedBranches;
+  for (unsigned int i = 0; i < speciesTree.getTree().getNodeNumber(); ++i) {
+    affectedBranches.push_back(i);
+  }
+  for (auto &bs: searchState.sprBoots) {
+    bs.test(perFamLL, affectedBranches, true); 
+  }
   for (auto prune: prunes) {
     std::vector<unsigned int> regrafts;
     SpeciesTreeOperator::getPossibleRegrafts(speciesTree, prune, radius, regrafts);
@@ -43,6 +55,13 @@ bool SpeciesSPRSearch::SPRRound(SpeciesTree &speciesTree,
       }
     }
   }
+  
+  for (auto node: speciesTree.getTree().getNodes()) {
+    unsigned int ok = 0;
+    for (auto &bs: searchState.sprBoots) {
+      ok += bs.isOk(node->node_index);
+    }
+  }
   return better;
 }
 
@@ -51,7 +70,6 @@ bool SpeciesSPRSearch::SPRSearch(SpeciesTree &speciesTree,
   SpeciesSearchState &searchState,
   unsigned int radius)
 {
-  
   Logger::info << std::endl;
   Logger::timed << "[Species search]" << " Starting species tree local SPR search, radius=" 
     << radius << ", bestLL=" << searchState.bestLL 

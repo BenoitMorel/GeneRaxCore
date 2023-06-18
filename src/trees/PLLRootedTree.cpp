@@ -208,7 +208,12 @@ static void setNodeLabel(corax_rnode_t *node, const std::string &label)
   node->label = static_cast<char*>(malloc(sizeof(char) * (label.size() + 1)));
   std::strcpy(node->label, label.c_str());
 }
-
+  
+void PLLRootedTree::setLabel(unsigned int nodeIndex, const std::string &label)
+{
+  setNodeLabel(getNode(nodeIndex), label);
+}
+  
 static bool isFloat(const std::string &str) 
 {
   std::istringstream iss(str);

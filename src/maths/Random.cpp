@@ -12,6 +12,12 @@ int Random::getInt()
 {
   return _unii(_rng);
 }
+  
+int Random::getInt(unsigned int min, unsigned int max)
+{
+  std::uniform_int_distribution<int> distr(min, max);
+  return distr(_rng);
+}
 
 bool Random::getBool()
 {

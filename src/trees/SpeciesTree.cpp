@@ -277,6 +277,36 @@ void SpeciesTreeOperator::getPossibleRegrafts(SpeciesTree &speciesTree,
   recursiveGetNodes(getBrother(pruneNode)->left, 0, radius, regrafts, false);
   recursiveGetNodes(getBrother(pruneNode)->right, 0, radius, regrafts, false);
 }
+
+
+void SpeciesTreeOperator::getAffectedBranches(SpeciesTree &speciesTree, 
+      unsigned int prune, 
+      unsigned int regraft,
+      std::vector<unsigned int> &affectedBranches)
+{
+  // we return the nodes between p and r (not including p and r) and their LCA
+  auto &tree = speciesTree.getTree();
+  // this should be fast, the LCAs are cached
+  auto lca = tree.getLCA(prune, regraft);
+  auto p = tree.getNode(prune);
+  auto r = tree.getNode(regraft);
+  if (p != lca) {
+    p = p->parent; // skip the prune node
+  }
+
+  if (r != lca) {
+    r = r->parent; // skip the regraft node
+  }
+  while (p != lca) {
+    affectedBranches.push_back(p->node_index);
+    p = p->parent;
+  }
+  while (r != lca) {
+    affectedBranches.push_back(r->node_index);
+    r = r->parent;
+  }
+}
+
   
 static size_t leafHash(const corax_rnode_t *leaf) {
   assert(leaf);
@@ -344,5 +374,4 @@ std::unordered_set<std::string> SpeciesTree::getLabelsFromFamilies(const Familie
   return leaves;
 }
   
-
   

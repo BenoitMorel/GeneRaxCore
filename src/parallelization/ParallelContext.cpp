@@ -261,6 +261,28 @@ void ParallelContext::allGatherInt(int localValue, std::vector<int> &allValues)
 #endif
 
 }
+void ParallelContext::allGatherUInt(unsigned int localValue, std::vector<unsigned int> &allValues)
+{
+  if (!_mpiEnabled) {
+    allValues.clear();
+    allValues.push_back(localValue);
+    return;
+  }
+#ifdef WITH_MPI
+  allValues.resize(getSize());
+  MPI_Allgather(
+    &localValue,
+    1,
+    MPI_UNSIGNED,
+    &(allValues[0]),
+    1,
+    MPI_UNSIGNED,
+    getComm());
+#else
+  assert(false);
+#endif
+
+}
 
 void ParallelContext::concatenateIntVectors(const std::vector<int> &localVector, std::vector<int> &globalVector)
 {

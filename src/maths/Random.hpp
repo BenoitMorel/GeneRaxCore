@@ -6,6 +6,10 @@ public:
   Random() = delete;
   static void setSeed(unsigned int seed);
   static int getInt(); 
+  /**
+   *  Return a uniform random value between min and max (included)
+   */
+  static int getInt(unsigned int min, unsigned int max); 
   static double getProba();
   static bool getBool();
 private:

@@ -71,6 +71,14 @@ public:
   static void changeRoot(SpeciesTree &speciesTree, unsigned int direction);
   static void revertChangeRoot(SpeciesTree &speciesTree, unsigned int direction);
   static bool canApplySPRMove(SpeciesTree &speciesTree, unsigned int prune, unsigned int regraft);
+  /**
+   *  Add to affectedBranches all branches that would be affected (whose bipartition would change) if
+   *  we prune prune and regraft it to regraft on speciesTree
+   */
+  static void getAffectedBranches(SpeciesTree &speciesTree, 
+      unsigned int prune, 
+      unsigned int regraft,
+      std::vector<unsigned int> &affectedBranches);
   static unsigned int applySPRMove(SpeciesTree &speciesTree, unsigned int prune, unsigned int regraft);
   static void reverseSPRMove(SpeciesTree &speciesTree, unsigned int prune, unsigned int applySPRMoveReturnValue);
   static void getPossiblePrunes(SpeciesTree &speciesTree, 

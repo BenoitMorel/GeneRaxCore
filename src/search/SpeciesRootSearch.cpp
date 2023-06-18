@@ -2,7 +2,7 @@
 #include <trees/SpeciesTree.hpp>
 #include <trees/PLLRootedTree.hpp>
 #include "DatedSpeciesTreeSearch.hpp"
-
+#include <numeric>
 
 static void rootSearchAux(SpeciesTree &speciesTree, 
     SpeciesTreeLikelihoodEvaluatorInterface &evaluator,
@@ -32,22 +32,24 @@ static void rootSearchAux(SpeciesTree &speciesTree,
     evaluator.pushRollback();
     SpeciesTreeOperator::changeRoot(speciesTree, direction);
     double ll = evaluator.computeLikelihood();
-    
     ll = DatedSpeciesTreeSearch::optimizeDates(speciesTree,
         evaluator,
         searchState,
         ll,
         searchState.farFromPlausible);
+    PerFamLL perFamLL;
+    ll = evaluator.computeLikelihood(&perFamLL);
     if (treePerFamLLVec) {
+      PerFamLL globalPerFamLL;
+      ParallelContext::concatenateHetherogeneousDoubleVectors(
+        perFamLL, globalPerFamLL);
       auto newick = speciesTree.getTree().getNewickString();
-      treePerFamLLVec->push_back({newick, PerFamLL()});
-      auto &perFamLL = treePerFamLLVec->back().second;
-      evaluator.fillPerFamilyLikelihoods(perFamLL);
+      treePerFamLLVec->push_back({newick, globalPerFamLL});
     }
     auto root = speciesTree.getRoot();
     if (rootLikelihoods) {
-      rootLikelihoods->saveValue(root->left, ll);
-      rootLikelihoods->saveValue(root->right, ll);
+      rootLikelihoods->saveRootLikelihood(root, ll);
+      rootLikelihoods->savePerFamilyLikelihoods(root, perFamLL);
     }
     visits++;
     unsigned int additionalDepth = 0;
@@ -96,18 +98,20 @@ double SpeciesRootSearch::rootSearch(
   Logger::timed << "[Species search] Root search with depth=" << maxDepth << std::endl;
   std::vector<unsigned int> movesHistory;
   std::vector<unsigned int> bestMovesHistory;
-  double bestLL = evaluator.computeLikelihood();
+  PerFamLL perFamLL;
+  double bestLL = evaluator.computeLikelihood(&perFamLL);
   if (treePerFamLLVec) {
+    PerFamLL globalPerFamLL;
+    ParallelContext::concatenateHetherogeneousDoubleVectors(
+      perFamLL, globalPerFamLL);
     treePerFamLLVec->clear();
     auto newick = speciesTree.getTree().getNewickString();
-    treePerFamLLVec->push_back({newick, PerFamLL()});
-    auto &perFamLL = treePerFamLLVec->back().second;
-    evaluator.fillPerFamilyLikelihoods(perFamLL);
+    treePerFamLLVec->push_back({newick, globalPerFamLL});
   }
   auto root = speciesTree.getRoot();
   if (rootLikelihoods) {
-    rootLikelihoods->saveValue(root->left, bestLL);
-    rootLikelihoods->saveValue(root->right, bestLL);
+    rootLikelihoods->saveRootLikelihood(root, bestLL);
+    rootLikelihoods->savePerFamilyLikelihoods(root, perFamLL);
   }
   unsigned int visits = 1;
   movesHistory.push_back(1);

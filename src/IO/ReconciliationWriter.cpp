@@ -265,7 +265,7 @@ static void recursivelySaveReconciliationsNewickEvents(
     os << ")";
   } 
   if (!node->next) {
-    os << (node->label ? node->label : "coucou");
+    os << (node->label ? node->label : "null");
   } else {
     os << Enums::getEventName(geneToEvents[node->node_index].back().type); 
   }

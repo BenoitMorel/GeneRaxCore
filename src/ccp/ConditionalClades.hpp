@@ -20,13 +20,24 @@ struct CladeSplit {
   CID right;
   double frequency;
   double deviation;
+  double blLeft;
+  double blRight;
   CladeSplit():
-    frequency(0.0)
+    frequency(0.0),
+    blLeft(0.0),
+    blRight(0.0)
   {
   }
 };
 
 
+/**
+ *  SubladeBLs[cid][childcid] = vector of branch lengths
+ */
+// TODO we could replace this by a pair {sum, count} to compute the average!!
+using BLs = std::vector<double>;
+using CladeBLs = std::unordered_map<unsigned int, BLs>;
+using SubcladeBLs = std::vector<CladeBLs>;
 
 using CladeSplits = std::vector<CladeSplit>;
 using CladeToCID = std::unordered_map<CCPClade, CID>;
@@ -100,6 +111,7 @@ private:
   std::vector<CladeSplits> _allCladeSplits;
 private:
   void _fillCCP(SubcladeCounts &subcladeCounts,
+      SubcladeBLs &subcladeBLs,
       bool useLikelihoods,
       std::unordered_map<unsigned int, double> *CIDToDeviation = nullptr);
 };

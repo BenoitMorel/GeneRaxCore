@@ -60,14 +60,13 @@ public:
     _userDTLRates = userDTLRates;
   }
   virtual ~SpeciesTreeLikelihoodEvaluator() {}
-  virtual double computeLikelihood();
+  virtual double computeLikelihood(PerFamLL *perFamLL = nullptr);
   virtual double computeLikelihoodFast();
   virtual bool providesFastLikelihoodImpl() const;
   virtual bool isDated() const {return _modelRates->info.isDated();}
   virtual double optimizeModelRates(bool thorough = false);
   virtual void pushRollback();
   virtual void popAndApplyRollback();
-  virtual void fillPerFamilyLikelihoods(PerFamLL &perFamLL);
   virtual void getTransferInformation(SpeciesTree &speciesTree,
     TransferFrequencies &frequencies,
     PerSpeciesEvents &perSpeciesEvents,
@@ -141,7 +140,6 @@ private:
   unsigned int _unsupportedCladesNumber();
   void updateEvaluations();
   std::string getSpeciesTreePath(const std::string &speciesId);
-  void setGeneTreesFromFamilies(const Families &families);
   void reGenerateEvaluations();
   double transferSearch();
   double sprSearch(unsigned int radius);

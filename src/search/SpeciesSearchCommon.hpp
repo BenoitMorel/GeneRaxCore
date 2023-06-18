@@ -6,18 +6,75 @@
 #include <util/types.hpp>
 #include <util/Scenario.hpp>
 #include <maths/AverageStream.hpp>
+#include <search/UFBoot.hpp>
+#include <trees/SpeciesTree.hpp>
 
-class SpeciesTree; 
 class PerCorePotentialTransfers;
 using TreePerFamLL = std::pair<std::string, PerFamLL>;
 using TreePerFamLLVec = std::vector<TreePerFamLL>;
-struct RootLikelihoods {
-  void reset() {
-    idToLL.clear();
+
+
+/**
+ *  Store results (likelihoods, bootstrap info) for each
+ *  root candidate that has been evaluated
+ */
+class RootLikelihoods {
+public:
+
+  RootLikelihoods(unsigned int localFamilies)
+  {
+    unsigned int samples = 1000;
+    for (unsigned int i = 0; i < samples; ++i) {
+      _bootstraps.push_back(RootBoot(localFamilies));
+    }
   }
-  void saveValue(corax_rnode_t *t, double ll);
+                
+
+  /*
+   *  Reset all results
+   */
+  void reset() {
+    _idToLL.clear();
+    newickToId.clear();
+    for (auto &bs: _bootstraps) {
+      bs.reset();
+    }
+  }
+
+  /**
+   *  Add the likelihood of a root position
+   */
+  void saveRootLikelihood(corax_rnode_t *root, double ll);
+  
+  void savePerFamilyLikelihoods(corax_rnode_t *root, 
+      const PerFamLL &likelihoods);
+
+  /**
+   *  Fill the labels of the tree with the corresponding root 
+   *  likelihoods 
+   */
   void fillTree(PLLRootedTree &tree);
-  std::unordered_map<std::string, double> idToLL;
+
+  /**
+   *  Fill the labels of the tree with the corresponding root 
+   *  likelihoods 
+   */
+  void fillTreeBootstraps(PLLRootedTree &tree);
+
+  /**
+   * Return true if no value was stored
+   */ 
+  bool isEmpty() const {return !_idToLL.size();}
+
+private:
+
+  bool hasSubtreeId(const corax_rnode_t *subtree) const;
+  unsigned int getSubtreeId(const corax_rnode_t *subtree) const;
+  unsigned int getRootId(const corax_rnode_t *root);
+
+  std::unordered_map<std::string, unsigned int> newickToId;
+  std::unordered_map<unsigned int, double> _idToLL;
+  std::vector<RootBoot> _bootstraps;
 };
 
 /**
@@ -29,9 +86,12 @@ class SpeciesTreeLikelihoodEvaluatorInterface {
 public:
   virtual ~SpeciesTreeLikelihoodEvaluatorInterface() {};
   /**
-   *  Exact likelihood computation
+   * Computes and return the likelihood
+   *
+   * If perFam is set, fill perFamLL with the per-family log-likelihoods
+   * from the current parralel core 
    */
-  virtual double computeLikelihood() = 0;
+  virtual double computeLikelihood(PerFamLL *perFamLL = nullptr) = 0;
 
   /**
    *  Fast but approximated version of the likelihood
@@ -73,11 +133,6 @@ public:
     PerSpeciesEvents &perSpeciesEvents,
     PerCorePotentialTransfers &potentialTransfers) = 0;
   
-  /**
-   * Fill perFamLL with the per-family (over all parallel
-   * ranks) log-likelihoods
-   */
-  virtual void fillPerFamilyLikelihoods(PerFamLL &perFamLL) = 0;
   
   /**
    *  Are we in prune species tree mode?
@@ -106,11 +161,17 @@ public:
 struct SpeciesSearchState {
 public:
   SpeciesSearchState(SpeciesTree &speciesTree,
-      const std::string &pathToBestSpeciesTree): 
+      const std::string &pathToBestSpeciesTree,
+      unsigned int familyNumber): 
     speciesTree(speciesTree),
     pathToBestSpeciesTree(pathToBestSpeciesTree),
     farFromPlausible(true)
-    {}
+    {
+      for (unsigned int i = 0; i < 1000; ++i) {
+        sprBoots.push_back(PerBranchBoot(familyNumber,
+              speciesTree.getTree().getNodeNumber()));
+      }
+    }
   
   /**
    *  Reference to the current species tree
@@ -158,7 +219,11 @@ public:
   AverageStream averageApproxError;
 
 
+  std::vector<PerBranchBoot> sprBoots;
+
   void betterTreeCallback(double ll);
+
+  void saveSpeciesTreeRell(const std::string &outputFil);
 };
 
 class SpeciesSearchCommon {

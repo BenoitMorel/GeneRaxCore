@@ -34,7 +34,7 @@ SpeciesTreeOptimizer::SpeciesTreeOptimizer(const std::string speciesTreeFile,
     const SpeciesTreeSearchParams &searchParams):
   _speciesTree(makeSpeciesTree(speciesTreeFile,
         initialFamilies)),
-  _geneTrees(nullptr),
+  _geneTrees(std::make_unique<PerCoreGeneTrees>(initialFamilies, true)),
   _initialFamilies(initialFamilies),
   _outputDir(outputDir),
   _firstOptimizeRatesCall(true),
@@ -44,12 +44,13 @@ SpeciesTreeOptimizer::SpeciesTreeOptimizer(const std::string speciesTreeFile,
   _okForClades(0),
   _koForClades(0),
   _searchState(*_speciesTree, 
-      Paths::getSpeciesTreeFile(_outputDir, "inferred_species_tree.newick"))
+      Paths::getSpeciesTreeFile(_outputDir, "inferred_species_tree.newick"),
+      _geneTrees->getTrees().size())
 {
 
   _modelRates.info.perFamilyRates = false; // we set it back a few
                                            // lines later
-  setGeneTreesFromFamilies(initialFamilies);
+  updateEvaluations();
   _modelRates = ModelParameters(startingRates, 
       _geneTrees->getTrees().size(),
       recModelInfo);
@@ -138,7 +139,7 @@ double SpeciesTreeOptimizer::rootSearch(unsigned int maxDepth,
   Logger::info << std::endl;
   Logger::timed << "[Species search] Root search with depth=" << maxDepth << std::endl;
   TreePerFamLLVec treePerFamLLVec;  
-  RootLikelihoods rootLikelihoods;
+  RootLikelihoods rootLikelihoods(_evaluations.size());
   SpeciesRootSearch::rootSearch(
       *_speciesTree,
       _evaluator,
@@ -154,6 +155,14 @@ double SpeciesTreeOptimizer::rootSearch(unsigned int maxDepth,
     rootLikelihoods.fillTree(tree);
     auto out = Paths::getSpeciesTreeFile(_outputDir, 
         "species_tree_llr.newick");
+    tree.save(out);
+  }
+  {
+    auto newick = _speciesTree->getTree().getNewickString();
+    PLLRootedTree tree(newick, false); 
+    rootLikelihoods.fillTreeBootstraps(tree);
+    auto out = Paths::getSpeciesTreeFile(_outputDir, 
+        "species_tree_root_support.newick");
     tree.save(out);
   }
   if (outputConsel) {
@@ -242,12 +251,6 @@ double SpeciesTreeOptimizer::computeRecLikelihood()
   ParallelContext::sumDouble(res);
   return res;
 
-}
-
-void SpeciesTreeOptimizer::setGeneTreesFromFamilies(const Families &families)
-{
-  _geneTrees = std::make_unique<PerCoreGeneTrees>(families, true);
-  updateEvaluations();
 }
   
 void SpeciesTreeOptimizer::updateEvaluations()
@@ -376,14 +379,27 @@ void SpeciesTreeOptimizer::savePerFamilyLikelihoods(
 }
 
 
-double SpeciesTreeLikelihoodEvaluator::computeLikelihood()
-{ 
+double SpeciesTreeLikelihoodEvaluator::computeLikelihood(
+    PerFamLL *perFamLL)
+{
   if (_rootedGeneTrees) {
     for (auto evaluation: *_evaluations) {
       evaluation->setRoot(nullptr);
     }
   }
-  return computeLikelihoodFast();
+  if (perFamLL) {
+    perFamLL->clear();
+  }
+  double sumLL = 0.0;
+  for (auto &evaluation: *_evaluations) {
+    auto ll = evaluation->evaluate();
+    if (perFamLL) {
+      perFamLL->push_back(ll);     
+    }
+    sumLL += ll;
+  }
+  ParallelContext::sumDouble(sumLL);
+  return sumLL;
 }
 
 double SpeciesTreeLikelihoodEvaluator::computeLikelihoodFast()
@@ -448,18 +464,6 @@ void SpeciesTreeLikelihoodEvaluator::getTransferInformation(SpeciesTree &species
     reconciliationSamples,
     perSpeciesEvents,
     forceTransfers);
-}
-
-void SpeciesTreeLikelihoodEvaluator::fillPerFamilyLikelihoods(
-    PerFamLL &perFamLL)
-{
-  ParallelContext::barrier();
-  std::vector<double> localLL;
-  for (auto &evaluation: *_evaluations) {
-    localLL.push_back(evaluation->evaluate());
-  }
-  ParallelContext::concatenateHetherogeneousDoubleVectors(
-      localLL, perFamLL);
 }
 
 void SpeciesTreeLikelihoodEvaluator::pushRollback() 

@@ -45,6 +45,7 @@ public:
    */
   static void allGatherDouble(double localValue, std::vector<double> &allValues);
   static void allGatherInt(int localValue, std::vector<int> &allValues);
+  static void allGatherUInt(unsigned int localValue, std::vector<unsigned int> &allValues);
 
   static bool isRandConsistent();
   static void makeRandConsistent();

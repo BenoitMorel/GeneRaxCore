@@ -80,6 +80,7 @@ static void addSubclade(CID cid,
     CID subcladeCID,
     SubcladeCounts &subcladeCounts,
     double count,
+    double bl,
     bool useLikelihoods)
 {
   addClade(subcladeCID, subcladeCounts[cid], count, useLikelihoods);
@@ -220,6 +221,18 @@ static void extractClades(const WeightedTrees &weightedTrees,
 }
 
 
+static void addBL(unsigned int cid,
+    unsigned int childCid, 
+    double bl,
+    SubcladeBLs &subcladeBLs)
+{
+  auto &m = subcladeBLs[cid];
+  if (m.find(childCid) == m.end()) {
+    m.insert({childCid, std::vector<double>()});
+  }
+  m[childCid].push_back(bl);
+}
+
 // fill cladeCounts (number of times each clade occurs) and
 // subcladeCOunts (for each clade, the number of times each subclade
 // occures)
@@ -229,6 +242,7 @@ static void fillCladeCounts(const WeightedTrees &weightedTrees,
     const std::unordered_map<std::string, unsigned int> &leafToId,
     const std::vector<std::vector<corax_unode_t*> > &postOrderNodes,
     SubcladeCounts &subcladeCounts,
+    SubcladeBLs &subcladeBLs,
     bool useLikelihoods,
     std::unordered_map<unsigned int, double> *CIDToDeviation = nullptr)
 {
@@ -256,24 +270,24 @@ static void fillCladeCounts(const WeightedTrees &weightedTrees,
         clade.set(id);
         cid = cladeToCID.at(clade);
       } else {
-        auto &leftClade = nodeIndexToClade[node->next->back->node_index];
-        auto &rightClade = nodeIndexToClade[node->next->next->back->node_index];
-        auto leftCID = nodeIndexToCID[node->next->back->node_index];
-        auto rightCID = nodeIndexToCID[node->next->next->back->node_index];
+        auto leftNode = node->next->back;
+        auto rightNode = node->next->next->back;
+        auto &leftClade = nodeIndexToClade[leftNode->node_index];
+        auto &rightClade = nodeIndexToClade[rightNode->node_index];
+        auto leftCID = nodeIndexToCID[leftNode->node_index];
+        auto rightCID = nodeIndexToCID[rightNode->node_index];
         clade = leftClade | rightClade;
         cid = cladeToCID.at(clade);
-        if (leftCID < rightCID) {
-          auto leftCID = cladeToCID.at(leftClade);
-          addSubclade(cid, leftCID, subcladeCounts, frequency, useLikelihoods);
-        } else {
-          auto rightCID = cladeToCID.at(rightClade);
-          addSubclade(cid, rightCID, subcladeCounts, frequency, useLikelihoods);
-        }
+        addSubclade(cid, leftCID, subcladeCounts, frequency, leftNode->length, useLikelihoods);
+        addBL(cid, leftCID, leftNode->length, subcladeBLs);
+        addSubclade(cid, rightCID, subcladeCounts, frequency, rightNode->length, useLikelihoods);
+        addBL(cid, rightCID, rightNode->length, subcladeBLs);
       }
 
       nodeIndexToCID[node->node_index] = cid;
       if (pair.first.root == nullptr || node == pair.first.root || node->back == pair.first.root) {
-        addSubclade(fullCladeCID, cid, subcladeCounts, frequency, useLikelihoods);
+        addSubclade(fullCladeCID, cid, subcladeCounts, frequency, node->length, useLikelihoods);
+        addBL(fullCladeCID, cid, node->length, subcladeBLs);
       }
       if (CIDToDeviation) {
         CIDToDeviation->insert({cid, deviations[node->node_index]});
@@ -495,14 +509,16 @@ void ConditionalClades::buildFromGeneTrees(const std::string &inputFile,
   // second pass to count the number of occurence of each clade,
   // and for each clade, the number of occurences of its subclades
   bool useLikelihoods = likelihoods.size();
+  SubcladeBLs subcladeBLs(_CIDToClade.size());
   fillCladeCounts(weightedTrees,
       _cladeToCID,
       leafToId,
       postOrderNodes,
       subcladeCounts,
+      subcladeBLs,
       useLikelihoods,
       CIDToDeviation.get());
-  _fillCCP(subcladeCounts, useLikelihoods, CIDToDeviation.get());
+  _fillCCP(subcladeCounts, subcladeBLs, useLikelihoods, CIDToDeviation.get());
 }
  
 
@@ -528,8 +544,16 @@ void normalizeFrequencies(CladeSplits &splits, bool logScale) {
     split.frequency /= sum;
   }
 }
-  
+ 
+double average(const std::vector<double> &values) {
+  assert(values.size());
+  double sum = std::accumulate(values.begin(), values.end(), 0.0);
+  double size = static_cast<double>(values.size());
+  return sum / size;
+}
+
 void ConditionalClades::_fillCCP(SubcladeCounts &subcladeCounts,
+    SubcladeBLs &subcladeBLs, 
     bool useLikelihoods,
     std::unordered_map<unsigned int, double> *CIDToDeviation)
 {
@@ -556,6 +580,8 @@ void ConditionalClades::_fillCCP(SubcladeCounts &subcladeCounts,
         split.parent = cid;
         split.left = CIDLeft;
         split.right = CIDRight;
+        split.blLeft = average(subcladeBLs[cid][CIDLeft]);
+        split.blRight = average(subcladeBLs[cid][CIDRight]);
         double frequency = double(subcladeCount.second); 
         if (CIDToDeviation && split.parent == rootCID) {
           double deviation = (*CIDToDeviation)[split.left] + 1.0;
@@ -678,6 +704,8 @@ static void serializeCladeSplit(const CladeSplit &split,
   serializeUInt(split.parent, os); 
   serializeUInt(split.left, os); 
   serializeUInt(split.right, os); 
+  serializeDouble(split.blLeft, os); 
+  serializeDouble(split.blRight, os); 
   serializeDouble(split.frequency, os); 
 }
 
@@ -687,6 +715,8 @@ static CladeSplit unserializeCladeSplit(std::ifstream &is)
   res.parent = unserializeUInt(is);
   res.left = unserializeUInt(is);
   res.right = unserializeUInt(is);
+  res.blLeft = unserializeDouble(is);
+  res.blRight = unserializeDouble(is);
   res.frequency = unserializeDouble(is);
   return res;
 }

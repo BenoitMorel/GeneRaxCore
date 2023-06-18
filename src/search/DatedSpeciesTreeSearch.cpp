@@ -182,7 +182,8 @@ public:
     _frequencies(frequencies)
   {}
   
-  virtual double computeLikelihood() {
+  virtual double computeLikelihood(PerFamLL *perFamLL = nullptr) {
+    assert(!perFamLL);
     return computeLikelihoodFast();
   }
   virtual double computeLikelihoodFast() {
@@ -200,9 +201,6 @@ public:
     PerSpeciesEvents &,
     PerCorePotentialTransfers &) {
     assert(false); 
-  }
-  virtual void fillPerFamilyLikelihoods(PerFamLL &) {
-    assert(false);
   }
   virtual bool pruneSpeciesTree() const {return false;}
 };
@@ -226,7 +224,7 @@ ScoredBackups DatedSpeciesTreeSearch::optimizeDatesFromReconciliation(SpeciesTre
     // we should replace this with anything that would produce
     // a random dating more efficiently
     tree.randomize();
-    SpeciesSearchState fakeState(speciesTree, "");
+    SpeciesSearchState fakeState(speciesTree, "", 0);
     fakeState.bestLL = fakeEvaluator.computeLikelihood();
     // first local search to get to a good starting tree
     auto bestScore = optimizeDatesLocal(speciesTree,
