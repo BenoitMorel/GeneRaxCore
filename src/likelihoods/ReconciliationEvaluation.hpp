@@ -50,8 +50,6 @@ public:
   corax_unode_t *getRoot();
   void setRoot(corax_unode_t * root);
 
-  void enableMADRooting(bool enable);
-
   /**
    *  @param input geneTree
    */

@@ -183,7 +183,7 @@ void GTBaseReconciliationModel<REAL>::initFromUtree(corax_utree_t *tree) {
       _geneIds.push_back(node->node_index);
     }
   }
-
+  enableMADRooting(this->_info.madRooting);
 }
 
  template <class REAL>
@@ -404,7 +404,7 @@ template <class REAL>
 void GTBaseReconciliationModel<REAL>::enableMADRooting(bool enable)
 {
   _madRootingEnabled = enable;
-  double beta = -2;
+  double beta = -2.0;
   double epsilon = 0.01;
   if (enable) {
     _madProbabilities = _pllUnrootedTree->getMADRelativeDeviations();
@@ -416,7 +416,18 @@ void GTBaseReconciliationModel<REAL>::enableMADRooting(bool enable)
     }
     for (auto &v: _madProbabilities) {
       v /= sum;
+      v *= static_cast<double>(_madProbabilities.size());
     }
+    /*
+    auto maxI = 0;
+    for (unsigned int i = 0; i < _madProbabilities.size(); ++i) {
+      if (_madProbabilities[i] > _madProbabilities[maxI]) {
+        maxI = i;    
+      }
+      _madProbabilities[i] = 0.0001;
+    }
+    _madProbabilities[maxI] = static_cast<double>(_madProbabilities.size());
+    */
   } 
 }
 
