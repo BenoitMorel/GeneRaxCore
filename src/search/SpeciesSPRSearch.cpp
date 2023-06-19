@@ -8,9 +8,6 @@ bool SpeciesSPRSearch::SPRRound(SpeciesTree &speciesTree,
   SpeciesSearchState &searchState,
   unsigned int radius)
 {
-  for (auto &boot: searchState.sprBoots) {
-    boot.reset();  
-  }
   Logger::timed << "[Species search] Start SPR Round radius=" << radius << std::endl;
   auto hash1 = speciesTree.getNodeIndexHash(); 
   auto supportValues = std::vector<double>();//_getSupport();
