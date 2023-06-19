@@ -97,6 +97,15 @@ static bool transferRound(SpeciesTree &speciesTree,
   unsigned int minTransfers = 1;
   std::vector<TransferMove> transferMoves;
  
+  PerFamLL perFamLL;
+  evaluation.computeLikelihood(&perFamLL);
+  std::vector<unsigned int> affectedBranches;
+  for (unsigned int i = 0; i < speciesTree.getTree().getNodeNumber(); ++i) {
+    affectedBranches.push_back(i);
+  }
+  for (auto &bs: searchState.sprBoots) {
+    bs.test(perFamLL, affectedBranches, true); 
+  }
   SpeciesTransferSearch::getSortedTransferList(speciesTree, evaluation, minTransfers, blacklist, transferMoves);
   auto copyTransferMoves = transferMoves;
   transferMoves.clear();
