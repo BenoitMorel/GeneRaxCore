@@ -16,7 +16,7 @@ struct ScoredBackup {
     backup(datedTree.getBackup()), score(score) 
   {}
 
-  bool operator < (const ScoredBackup &other) {
+  bool operator < (const ScoredBackup &other) const {
     return score < other.score;
   }
 };
