@@ -32,7 +32,7 @@ Bootstrap::Bootstrap(unsigned int samples)
   assert(totalSize == totalSamples);
 }
 
-double Bootstrap::evaluate(const std::vector<double> &likelihoods)
+double Bootstrap::evaluate(const std::vector<double> &likelihoods) const
 {
   auto ll = 0.0;
   for (auto i: indices) {
@@ -97,6 +97,58 @@ void PerBranchBoot::reset()
   std::fill(_ok.begin(), _ok.end(), true);
 }
 
+PerBranchKH::PerBranchKH(unsigned int elements, unsigned int branches, unsigned int bootstraps):
+  _perBootstrapRefLL(bootstraps, std::numeric_limits<double>::lowest()),
+  _oks(branches, bootstraps)
+{
+  for (unsigned int i = 0; i < bootstraps; ++i) {
+    _bootstraps.push_back(Bootstrap(elements));
+  }
+  
+}
 
+void PerBranchKH::test(const std::vector<double> &values, 
+      const std::vector<unsigned int> &branches)
+{
+  double ll2 = std::accumulate(values.begin(), values.end(), 0.0);
+  ParallelContext::sumDouble(ll2);
+  if (_refLL - ll2 < -1e-3) {
+    Logger::info << "ERROR _refLL - ll2 < -1e-3" << std::endl;
+    Logger::info << _refLL << " " << ll2 << std::endl;
+  }
+  if (_refLL < ll2) {
+    ll2 = _refLL;
+  }
+  double averageDelta = 0.0;
+  std::vector<double> deltas(_bootstraps.size(), 0.0);
+  for (unsigned int i = 0; i < _bootstraps.size(); ++i) {
+    deltas[i] = _perBootstrapRefLL[i] - _bootstraps[i].evaluate(values);
+    averageDelta += deltas[i];
+  }
+  averageDelta /= static_cast<double>(_bootstraps.size());
+  unsigned int oks = _bootstraps.size();;
+  for (unsigned int i = 0; i < _bootstraps.size(); ++i) {
+    if (deltas[i] - averageDelta > _refLL - ll2) {
+      oks--;
+    }
+  }
+  for (auto b: branches) {
+    _oks[b] = std::min(_oks[b], oks);
+  }
+}
+void PerBranchKH::newML(const std::vector<double> &values)
+{
+  _refLL = std::accumulate(values.begin(), values.end(), 0.0);
+  ParallelContext::sumDouble(_refLL);
+  for (unsigned int i = 0; i < _bootstraps.size(); ++i) {
+    _perBootstrapRefLL[i] = _bootstraps[i].evaluate(values);
+  }
+}
+
+void PerBranchKH::newMLTree(const std::vector<double> &values)
+{
+  newML(values);
+  std::fill(_oks.begin(), _oks.end(), _bootstraps.size());
+}
 
 

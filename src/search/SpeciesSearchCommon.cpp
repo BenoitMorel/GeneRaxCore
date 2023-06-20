@@ -126,11 +126,18 @@ void RootLikelihoods::fillTreeBootstraps(PLLRootedTree &tree)
   }
 }
 
-void SpeciesSearchState::betterTreeCallback(double ll)
+void SpeciesSearchState::betterTreeCallback(double ll, PerFamLL &perFamLL)
 {
   bool masterRankOnly = true;
   speciesTree.saveToFile(pathToBestSpeciesTree, masterRankOnly);
   bestLL = ll;
+  khBoots.newMLTree(perFamLL);
+}
+
+void SpeciesSearchState::betterLikelihoodCallback(double ll, PerFamLL &perFamLL)
+{
+  bestLL = ll;
+  khBoots.newML(perFamLL);
 }
 
 bool SpeciesSearchCommon::testSPR(SpeciesTree &speciesTree,
@@ -169,9 +176,11 @@ bool SpeciesSearchCommon::testSPR(SpeciesTree &speciesTree,
       searchState.averageApproxError.addValue(testedTreeLL - approxLL);
     }
     if (testedTreeLL > searchState.bestLL + 0.00000001) {
-      searchState.betterTreeCallback(testedTreeLL);
+      searchState.betterTreeCallback(testedTreeLL, perFamLL);
       // Better tree found! Do not rollback, and return
       return true;
+    } else {
+      searchState.khBoots.test(perFamLL, affectedBranches);
     }
   }
   // the tree is not better, rollback the move
@@ -209,8 +218,7 @@ bool SpeciesSearchCommon::veryLocalSearch(SpeciesTree &speciesTree,
   return false;
 }
 
-
-void SpeciesSearchState::saveSpeciesTreeRell(const std::string &outputFile)
+void SpeciesSearchState::saveSpeciesTreeBP(const std::string &outputFile)
 {
   PLLRootedTree tree(speciesTree.getTree().getNewickString(), false);
   auto m = tree.getNodeIndexMapping(speciesTree.getTree());  
@@ -224,6 +232,22 @@ void SpeciesSearchState::saveSpeciesTreeRell(const std::string &outputFile)
         ok++;
       }
     }
+    auto label = std::to_string(ok);
+    tree.setLabel(node->node_index, label);
+  }
+  tree.save(outputFile);
+
+}
+
+void SpeciesSearchState::saveSpeciesTreeKH(const std::string &outputFile)
+{
+  PLLRootedTree tree(speciesTree.getTree().getNewickString(), false);
+  auto m = tree.getNodeIndexMapping(speciesTree.getTree());  
+  for (auto node: tree.getNodes()) {
+    if (!node->left) {
+      continue;
+    }
+    auto ok = khBoots.getSupport(m[node->node_index]);
     auto label = std::to_string(ok);
     tree.setLabel(node->node_index, label);
   }

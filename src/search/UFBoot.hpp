@@ -22,7 +22,7 @@ public:
   /**
    * Evaluate the likelihood for this bootstrap from the per-sample likelihoods
    */
-  double evaluate(const std::vector<double> &likelihoods);
+  double evaluate(const std::vector<double> &likelihoods) const;
 
 private:
   std::vector<unsigned int> indices;
@@ -94,4 +94,21 @@ private:
 };
 
 
+class PerBranchKH {
+public:
+  PerBranchKH(unsigned int elements, unsigned int branches, unsigned int bootstraps);
+
+  void test(const std::vector<double> &values, 
+      const std::vector<unsigned int> &branches);
+
+  void newMLTree(const std::vector<double> &values);
+  void newML(const std::vector<double> &values);
+
+  unsigned int getSupport(unsigned int branch) const {return _oks[branch];}
+private:
+  std::vector<Bootstrap> _bootstraps;
+  double _refLL;
+  std::vector<double> _perBootstrapRefLL;
+  std::vector<unsigned int> _oks;
+};
 

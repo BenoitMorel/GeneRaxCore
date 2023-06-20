@@ -165,7 +165,8 @@ public:
       unsigned int familyNumber): 
     speciesTree(speciesTree),
     pathToBestSpeciesTree(pathToBestSpeciesTree),
-    farFromPlausible(true)
+    farFromPlausible(true),
+    khBoots(familyNumber, speciesTree.getTree().getNodeNumber(), 1000)
     {
       for (unsigned int i = 0; i < 1000; ++i) {
         sprBoots.push_back(PerBranchBoot(familyNumber,
@@ -220,10 +221,21 @@ public:
 
 
   std::vector<PerBranchBoot> sprBoots;
+  PerBranchKH khBoots;  
 
-  void betterTreeCallback(double ll);
+  /**
+   *  To call when a better tree is found
+   */
+  void betterTreeCallback(double ll, PerFamLL &perFamLL);
 
-  void saveSpeciesTreeRell(const std::string &outputFil);
+  /**
+   *  To call when the likelihood increases but the tree does not 
+   *  change (e.g after rates optimization)
+   */
+  void betterLikelihoodCallback(double ll, PerFamLL &perFamLL);
+
+  void saveSpeciesTreeKH(const std::string &outputFile);
+  void saveSpeciesTreeBP(const std::string &outputFile);
 };
 
 class SpeciesSearchCommon {

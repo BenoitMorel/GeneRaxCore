@@ -62,7 +62,7 @@ static void rootSearchAux(SpeciesTree &speciesTree,
       bestMovesHistory = movesHistory;
       bestDatedBackup = speciesTree.getDatedTree().getBackup();
       Logger::info << "Found better root " << ll << std::endl;
-      searchState.betterTreeCallback(ll);
+      searchState.betterTreeCallback(ll, perFamLL);
     }
     auto newMaxDepth = maxDepth;
     if (additionalDepth) {

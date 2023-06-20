@@ -201,6 +201,9 @@ bool SpeciesTransferSearch::transferSearch(
   bool better = false;
   while (!stop) {
     searchState.bestLL = evaluation.optimizeModelRates();
+    PerFamLL perFamLL;
+    evaluation.computeLikelihood(&perFamLL);
+    searchState.betterLikelihoodCallback(searchState.bestLL, perFamLL);
     stop = !transferRound(speciesTree, evaluation, searchState, 
         blacklist, maxImprovementsReached);
     if (!stop) {
