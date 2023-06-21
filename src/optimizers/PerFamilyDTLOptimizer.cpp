@@ -122,7 +122,6 @@ void PerFamilyDTLOptimizer::optimizeDTLRates(JointTree &jointTree, RecOpt method
 void PerFamilyDTLOptimizer::optimizeDLRates(JointTree &jointTree, RecOpt method) {
   switch(method) {
   case RecOpt::Grid:
-    Logger::info << "GRIIID" << std::endl;
     optimizeDLRatesWindow(jointTree);
     break;
   case RecOpt::Simplex:
@@ -283,7 +282,12 @@ void PerFamilyDTLOptimizer::optimizeDTLRatesGradient(JointTree &jointTree)
 {
   Evaluations evaluations;
   evaluations.push_back(jointTree.getReconciliationEvaluationPtr());
-  Parameters rates = DTLOptimizer::optimizeParameters(evaluations, jointTree.getRatesVector());
+  OptimizationSettings settings;
+  settings.optimizationMinImprovement = 0.1;
+  settings.lineSearchMinImprovement = 0.01;
+  settings.epsilon = 0.00000001;
+  settings.minAlpha = 0.00000001;
+  Parameters rates = DTLOptimizer::optimizeParameters(evaluations, jointTree.getRatesVector(), settings);
   Logger::info << "Per family rates: " << rates << std::endl;
   jointTree.setRates(rates);
 }
