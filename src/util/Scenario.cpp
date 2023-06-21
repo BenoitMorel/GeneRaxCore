@@ -416,7 +416,6 @@ void Scenario::saveTransferPairCountGlobal(PLLRootedTree &speciesTree,
     std::vector<Scenario> &scenarios,
     const std::string &filename)
 {
-  Logger::info << "Save transfer pairs to " << filename << std::endl;
   const auto labelToId = speciesTree.getDeterministicLabelToId();
   const auto idToLabel = speciesTree.getDeterministicIdToLabel();
   const unsigned int N = labelToId.size();
@@ -447,7 +446,6 @@ void Scenario::saveTransferPairCountGlobal(PLLRootedTree &speciesTree,
       parent = parent->parent;
     }
   }
-  Logger::info << "Transfers to parents: " << parentTransfers << std::endl;
   std::sort(transferPairs.rbegin(), transferPairs.rend());
   ParallelOfstream os(filename);
   for (auto p: transferPairs) {

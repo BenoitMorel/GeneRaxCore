@@ -60,9 +60,6 @@ SpeciesTreeOptimizer::SpeciesTreeOptimizer(const std::string speciesTreeFile,
   _searchState.farFromPlausible &= 
     _unsupportedCladesNumber() > std::max<unsigned int>(
       _speciesTree->getTree().getNodeNumber() / 4, 1);
-  if (_searchState.farFromPlausible) {
-    Logger::info << "The starting tree is far from being plausible" << std::endl;
-  }
 }
 
 static bool testAndSwap(size_t &hash1, size_t &hash2) {
@@ -136,8 +133,6 @@ SpeciesTreeOptimizer::~SpeciesTreeOptimizer()
 double SpeciesTreeOptimizer::rootSearch(unsigned int maxDepth,
     bool outputConsel)
 {
-  Logger::info << std::endl;
-  Logger::timed << "[Species search] Root search with depth=" << maxDepth << std::endl;
   TreePerFamLLVec treePerFamLLVec;  
   RootLikelihoods rootLikelihoods(_evaluations.size());
   SpeciesRootSearch::rootSearch(
@@ -170,17 +165,12 @@ double SpeciesTreeOptimizer::rootSearch(unsigned int maxDepth,
         "roots"); 
     std::string llOutput  = Paths::getConselLikelihoods(_outputDir, 
         "roots"); 
-    Logger::info << "Saving per-family likelihoods into: " 
-      << llOutput << std::endl;
-    Logger::info << "Saving the corresponding trees into: "
-      << treesOutput << std::endl;
     savePerFamilyLikelihoods(treePerFamLLVec,
       treesOutput,
       llOutput);
     
   }
   auto ll = computeRecLikelihood();
-  Logger::timed << "[Species search] After root search: LL=" << ll << std::endl;
   return ll;
 }
 
@@ -211,7 +201,6 @@ double SpeciesTreeOptimizer::transferSearch()
       *_speciesTree,
     _evaluator,
     _searchState);
-  Logger::timed << "After normal search: LL=" << _searchState.bestLL << std::endl;
   return _searchState.bestLL;
 }
 
@@ -221,8 +210,6 @@ double SpeciesTreeOptimizer::sprSearch(unsigned int radius)
     _evaluator,
     _searchState,
     radius);
-  Logger::timed << "After normal search: LL=" 
-    << _searchState.bestLL << std::endl;
   return _searchState.bestLL;
 }
  
@@ -243,14 +230,7 @@ void SpeciesTreeOptimizer::saveCurrentSpeciesTreePath(const std::string &str, bo
 
 double SpeciesTreeOptimizer::computeRecLikelihood()
 {
-  double res = 0.0;
-  for (auto &evaluation: _evaluations) {
-    auto ll = evaluation->evaluate();
-    res += ll;
-  }
-  ParallelContext::sumDouble(res);
-  return res;
-
+  return _evaluator.computeLikelihood();
 }
   
 void SpeciesTreeOptimizer::updateEvaluations()
@@ -360,7 +340,6 @@ void SpeciesTreeOptimizer::savePerFamilyLikelihoods(
     auto familiesNumber = treePerFamLLVec[0].second.size();
     osLL << treesNumber << " " << familiesNumber << std::endl;
     unsigned int index = 1;
-    Logger::info << "trees = " << treePerFamLLVec.size() << std::endl;
     for (const auto &treePerFamLL: treePerFamLLVec) {
       const auto &tree = treePerFamLL.first;
       const auto perFamLL = treePerFamLL.second;

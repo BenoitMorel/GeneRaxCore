@@ -95,6 +95,7 @@ double SpeciesRootSearch::rootSearch(
     RootLikelihoods *rootLikelihoods,
     TreePerFamLLVec *treePerFamLLVec)
 {
+  Logger::info << std::endl;
   Logger::timed << "[Species search] Root search with depth=" << maxDepth << std::endl;
   std::vector<unsigned int> movesHistory;
   std::vector<unsigned int> bestMovesHistory;
@@ -152,7 +153,7 @@ double SpeciesRootSearch::rootSearch(
     PLLRootedTree tree(newick, false); 
     rootLikelihoods->fillTree(tree);
   }
-  Logger::timed << "[Species search] After root search: LL=" << bestLL << std::endl;
+  Logger::timed << "[Species search] After root search: LL=" << bestLL << " " << std::endl;
   return bestLL;
 }
 

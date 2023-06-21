@@ -75,7 +75,6 @@ PerCoreGeneTrees::PerCoreGeneTrees(const Families &families,
     bool acceptMultipleTrees,
     bool ccpMode)
 {
-  Logger::timed << "Building PerCoreGeneTrees..." << std::endl;
   auto treeSizes = ccpMode ? getCCPSizes(families) : LibpllParsers::parallelGetTreeSizes(families);
   auto myIndices = getMyIndices(treeSizes);
 
