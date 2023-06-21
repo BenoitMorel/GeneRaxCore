@@ -22,7 +22,7 @@ static bool lineSearchParameters(FunctionToOptimize &function,
     const OptimizationSettings &settings
     )
 {
-  
+   
   double alpha = 0.1; 
   const double minAlpha = settings.minAlpha;
   Parameters currentGradient(gradient);
@@ -60,6 +60,7 @@ Parameters optimizeParametersGradient(FunctionToOptimize &function,
     const Parameters &startingParameters,
     OptimizationSettings settings)
 {
+  //settings.verbose = true;
   if (startingParameters.dimensions() == 0) {
     return Parameters();
   }
