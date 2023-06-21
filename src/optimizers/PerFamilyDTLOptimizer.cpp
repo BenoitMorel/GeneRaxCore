@@ -283,7 +283,7 @@ void PerFamilyDTLOptimizer::optimizeDTLRatesGradient(JointTree &jointTree)
   Evaluations evaluations;
   evaluations.push_back(jointTree.getReconciliationEvaluationPtr());
   OptimizationSettings settings;
-  settings.optimizationMinImprovement = std::max(0.1, jointTree.computeReconciliationLoglk());
+  settings.optimizationMinImprovement = std::max(0.1, fabs(jointTree.computeReconciliationLoglk()) / 1000.0);
   settings.lineSearchMinImprovement = 0.01;
   settings.epsilon = 0.00000001;
   settings.minAlpha = 0.00000001;
