@@ -265,9 +265,9 @@ void PLLRootedTree::ensureUniqueLabels()
       label += "_";
       label += anyLeafLabel[node->right->node_index];
       getUniqueLabel(labels, label);
-      labels.insert(label);
       setNodeLabel(node, label);
     }
+    labels.insert(label);
   }
 }
 
