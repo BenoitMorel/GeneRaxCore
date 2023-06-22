@@ -34,7 +34,7 @@ public:
   virtual void setRates(const RatesVector &){}
 protected:
   // overload from parent
-  virtual void setInitialGeneTree(PLLUnrootedTree &tree);
+  virtual void setInitialGeneTree(PLLUnrootedTree &tree, corax_unode_t *forcedGeneRoot);
   // overload from parent
   virtual void updateCLV(corax_unode_t *geneNode);
   // overload from parent
@@ -74,9 +74,9 @@ private:
 
 
 
-void ParsimonyDModel::setInitialGeneTree(PLLUnrootedTree &tree)
+void ParsimonyDModel::setInitialGeneTree(PLLUnrootedTree &tree, corax_unode_t *forcedGeneRoot)
 {
-  GTBaseReconciliationModel<double>::setInitialGeneTree(tree);
+  GTBaseReconciliationModel<double>::setInitialGeneTree(tree, forcedGeneRoot);
   _dlclvs = std::vector<DLCLV>(2 * (this->_maxGeneId + 1));
 }
 

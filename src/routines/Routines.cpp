@@ -182,6 +182,7 @@ void Routines::inferAndGetReconciliationScenarios(
   auto consistentSeed = Random::getInt();
   auto modelParameters = initialModelRates;
   ParallelContext::barrier();
+  std::string forcedRootedGeneTree;
   // pre-fill scenarios array
   const unsigned int scenariosNumber = geneTrees.getTrees().size() * 
     (std::max(1u, reconciliationSamples));
@@ -191,7 +192,10 @@ void Routines::inferAndGetReconciliationScenarios(
   evaluations.resize(geneTrees.getTrees().size());
   for (unsigned int i = 0; i  < geneTrees.getTrees().size(); ++i) {
     auto &tree = geneTrees.getTrees()[i];
-    evaluations[i] = std::make_shared<ReconciliationEvaluation>(speciesTree, *tree.geneTree, tree.mapping, modelParameters.info);
+    if (initialModelRates.info.forceGeneTreeRoot) {
+      forcedRootedGeneTree = tree.startingGeneTreeFile;
+    }
+    evaluations[i] = std::make_shared<ReconciliationEvaluation>(speciesTree, *tree.geneTree, tree.mapping, modelParameters.info, forcedRootedGeneTree);
     evaluations[i]->setRates(modelParameters.getRates(i));
   }
   if (optimizeRates) {
@@ -205,6 +209,7 @@ void Routines::inferAndGetReconciliationScenarios(
     Logger::timed << "done" << std::endl;
   }
   ParallelContext::barrier();
+  
   // infer the scenarios!
   for (unsigned int i = 0; i  < geneTrees.getTrees().size(); ++i) {
     if (reconciliationSamples < 1) {
@@ -571,10 +576,15 @@ void Routines::buildEvaluations(PerCoreGeneTrees &geneTrees,
   evaluations.resize(trees.size());
   for (unsigned int i = 0; i < trees.size(); ++i) {
     auto &tree = trees[i];
+    std::string forcedRootedGeneTree;
+    if (recModelInfo.forceGeneTreeRoot) {
+      forcedRootedGeneTree = tree.startingGeneTreeFile;
+    }
     evaluations[i] = std::make_shared<ReconciliationEvaluation>(speciesTree, 
         *tree.geneTree, 
         tree.mapping, 
-        recModelInfo);
+        recModelInfo,
+        forcedRootedGeneTree);
   }
 }
 

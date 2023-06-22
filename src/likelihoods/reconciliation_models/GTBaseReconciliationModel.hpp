@@ -15,7 +15,8 @@ class GTBaseReconciliationInterface: public BaseReconciliationModel {
 
   virtual ~GTBaseReconciliationInterface() {}
   virtual double computeLogLikelihood() = 0;
-  virtual void setInitialGeneTree(PLLUnrootedTree &tree) = 0;
+  virtual void setInitialGeneTree(PLLUnrootedTree &tree,
+    corax_unode_t *forcedGeneRoot) = 0;
   virtual bool inferMLScenario(Scenario &scenario, 
       bool stochastic = false) = 0;
   virtual bool isParsimony() const = 0;
@@ -40,7 +41,8 @@ public:
   virtual ~GTBaseReconciliationModel() {}
   
   virtual double computeLogLikelihood();
-  virtual void setInitialGeneTree(PLLUnrootedTree &tree);
+  virtual void setInitialGeneTree(PLLUnrootedTree &tree,
+      corax_unode_t *forcedGeneRoot);
   virtual bool inferMLScenario(Scenario &scenario, bool stochastic = false);
   virtual bool isParsimony() const {return false;}
   virtual void setRoot(corax_unode_t * root) {_geneRoot = root;}
@@ -99,6 +101,7 @@ private:
 
 protected:
   corax_unode_t *_geneRoot;
+  corax_unode_t *_forcedGeneRoot;
   std::vector<corax_rnode_t *> _geneToSpeciesLCA;
   // gene ids in postorder 
   std::vector<unsigned int> _geneIds;
@@ -155,7 +158,8 @@ GTBaseReconciliationModel<REAL>::GTBaseReconciliationModel(
   GTBaseReconciliationInterface(speciesTree, 
       geneSpeciesMapping,
       recModelInfo),
-  _geneRoot(0),
+  _geneRoot(nullptr),
+  _forcedGeneRoot(nullptr),
   _maxGeneId(1),
   _pllUnrootedTree(nullptr),
   _madRootingEnabled(false)
@@ -211,9 +215,15 @@ void GTBaseReconciliationModel<REAL>::mapGenesToSpecies()
 }
 
 template <class REAL>
-void GTBaseReconciliationModel<REAL>::setInitialGeneTree(PLLUnrootedTree &tree)
+void GTBaseReconciliationModel<REAL>::setInitialGeneTree(PLLUnrootedTree &tree,
+    corax_unode_t *forcedGeneRoot)
 {
   _pllUnrootedTree = &tree;
+  _forcedGeneRoot = forcedGeneRoot;
+  if (forcedGeneRoot && !forcedGeneRoot->next) {
+    _forcedGeneRoot = forcedGeneRoot->back;
+  }
+  _geneRoot = _forcedGeneRoot;
   initFromUtree(tree.getRawPtr());
   mapGenesToSpecies();
   _maxGeneId = static_cast<unsigned int>(_allNodes.size() - 1);
@@ -226,7 +236,10 @@ void GTBaseReconciliationModel<REAL>::getRoots(std::vector<corax_unode_t *> &roo
     const std::vector<unsigned int> &geneIds)
 {
   roots.clear();
-  if (this->_info.rootedGeneTree && _geneRoot) {
+  if (_forcedGeneRoot) {
+    roots.push_back(_forcedGeneRoot);
+    _geneRoot = _forcedGeneRoot;
+  } else if (this->_info.rootedGeneTree && _geneRoot) {
     roots.push_back(_geneRoot);
     if (_geneRoot->next) {
       roots.push_back(_geneRoot->next);
@@ -236,16 +249,16 @@ void GTBaseReconciliationModel<REAL>::getRoots(std::vector<corax_unode_t *> &roo
       roots.push_back(_geneRoot->back->next);
       roots.push_back(_geneRoot->back->next->next);
     }
-    return;
-  }
-  std::vector<bool> marked(geneIds.size(), false);
-  for (auto id: geneIds) {
-    auto node = _allNodes[id];
-    if (marked[node->node_index] || marked[node->back->node_index]) {
-      continue;
+  } else {
+    std::vector<bool> marked(geneIds.size(), false);
+    for (auto id: geneIds) {
+      auto node = _allNodes[id];
+      if (marked[node->node_index] || marked[node->back->node_index]) {
+        continue;
+      }
+      roots.push_back(node->back);
+      marked[node->node_index] = true;
     }
-    roots.push_back(node->back);
-    marked[node->node_index] = true;
   }
 }
 
@@ -452,6 +465,9 @@ void GTBaseReconciliationModel<REAL>::computeMLRoot(corax_unode_t *&bestGeneRoot
       }
     }
   }
+  assert(max != -std::numeric_limits<double>::infinity());
+  assert(bestGeneRoot);
+  assert(bestSpeciesRoot);
 }
 
 template <class REAL>
@@ -483,7 +499,6 @@ double GTBaseReconciliationModel<REAL>::getSumLikelihood()
   REAL total = REAL();
   std::vector<corax_unode_t *> roots;
   getRoots(roots, _geneIds);
-  //Logger::info << "HEY" << std::endl;
   if (!isParsimony()) {
     for (auto root: roots) {
       auto ll = getGeneRootLikelihood(root);

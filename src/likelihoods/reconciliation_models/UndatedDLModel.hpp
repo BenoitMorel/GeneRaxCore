@@ -39,7 +39,7 @@ public:
   virtual void setRates(const RatesVector &rates);
 protected:
   // overload from parent
-  virtual void setInitialGeneTree(PLLUnrootedTree &tree);
+  virtual void setInitialGeneTree(PLLUnrootedTree &tree, corax_unode_t *forcedGeneRoot);
   // overload from parent
   virtual void updateCLV(corax_unode_t *geneNode);
   // overload from parent
@@ -77,9 +77,9 @@ private:
 
 
 template <class REAL>
-void UndatedDLModel<REAL>::setInitialGeneTree(PLLUnrootedTree &tree)
+void UndatedDLModel<REAL>::setInitialGeneTree(PLLUnrootedTree &tree, corax_unode_t *forcedGeneRoot)
 {
-  GTBaseReconciliationModel<REAL>::setInitialGeneTree(tree);
+  GTBaseReconciliationModel<REAL>::setInitialGeneTree(tree, forcedGeneRoot);
   assert(this->getPrunedSpeciesNodeNumber());
   assert(this->_maxGeneId);
   std::vector<REAL> zeros(this->getPrunedSpeciesNodeNumber());

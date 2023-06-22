@@ -180,6 +180,17 @@ PLLRootedTree::PLLRootedTree(const std::unordered_set<std::string> &labels):
   setMissingBranchLengths();
 }
 
+std::unique_ptr<PLLRootedTree> PLLRootedTree::buildFromStrOrFile(const std::string &strOrFile)
+{
+  std::unique_ptr<PLLRootedTree> res;
+  try {
+    res = std::make_unique<PLLRootedTree>(strOrFile, true);
+  } catch (...) {
+    res = std::make_unique<PLLRootedTree>(strOrFile, false);
+  }
+  return res;
+}
+
 void PLLRootedTree::save(const std::string &fileName) const
 {
   LibpllParsers::saveRtree(_tree->root, fileName);

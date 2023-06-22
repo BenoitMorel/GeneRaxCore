@@ -17,6 +17,7 @@ public:
   struct GeneTree {
     
     std::string name;
+    std::string startingGeneTreeFile;
     unsigned int familyIndex;
     GeneSpeciesMapping mapping;
     PLLUnrootedTree *geneTree;

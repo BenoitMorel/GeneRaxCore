@@ -25,11 +25,14 @@ public:
    *  @param initialGeneTree initial gene tree
    *  @param geneSpeciesMapping gene-to-species geneSpeciesMapping
    *  @param recModelInfo description of the reconciliation model
+   *  @param forcedRootedGeneTree a path to a rooted tree used to enforce the root (empty for no enforcing) 
+   *  or its newick string
    */
   ReconciliationEvaluation(PLLRootedTree &speciesTree,
     PLLUnrootedTree &initialGeneTree,
     const GeneSpeciesMapping& geneSpeciesMapping,
-    const RecModelInfo &recModelInfo); 
+    const RecModelInfo &recModelInfo,
+    const std::string &forcedRootedGeneTree); 
   
   /**
    * Forbid copy
@@ -89,6 +92,7 @@ private:
   // we actually own this pointer, but we do not 
   // wrap it into a unique_ptr to allow forward definition
   GTBaseReconciliationInterface *_evaluators;
+  std::string _forcedRootedGeneTree;
 private:
   GTBaseReconciliationInterface *buildRecModelObject(RecModel recModel, bool infinitePrecision);
   corax_unode_t *computeMLRoot();

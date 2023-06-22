@@ -35,7 +35,7 @@ public:
   
 protected:
   // overloaded from parent
-  virtual void setInitialGeneTree(PLLUnrootedTree &tree);
+  virtual void setInitialGeneTree(PLLUnrootedTree &tree, corax_unode_t *forcedGeneRoot);
   // overloaded from parent
   virtual void updateCLV(corax_unode_t *geneNode);
   // overload from parent
@@ -136,9 +136,9 @@ private:
 
 
 template <class REAL>
-void UndatedDTLModel<REAL>::setInitialGeneTree(PLLUnrootedTree &tree)
+void UndatedDTLModel<REAL>::setInitialGeneTree(PLLUnrootedTree &tree, corax_unode_t *forcedGeneRoot)
 {
-  GTBaseReconciliationModel<REAL>::setInitialGeneTree(tree);
+  GTBaseReconciliationModel<REAL>::setInitialGeneTree(tree, forcedGeneRoot);
   DTLCLV nullCLV(this->_allSpeciesNodes.size());
   _dtlclvs = std::vector<DTLCLV>(2 * (this->_maxGeneId + 1), nullCLV);
 }

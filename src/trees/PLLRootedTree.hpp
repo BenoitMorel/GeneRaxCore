@@ -62,6 +62,8 @@ public:
    */
   PLLRootedTree(const std::unordered_set<std::string> &labels);
 
+  static std::unique_ptr<PLLRootedTree> buildFromStrOrFile(const std::string &strOrFile);
+  
   /**
    * Forbid copy
    */

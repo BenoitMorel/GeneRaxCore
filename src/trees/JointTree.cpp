@@ -135,12 +135,16 @@ JointTree::JointTree(const std::string &newickString,
   _supportThreshold(supportThreshold),
   _madRooting(madRooting)
 {
-
   _geneSpeciesMap.fill(geneSpeciesMapfile, newickString);
+  std::string enforcedRootedGeneTree;
+  if (recModelInfo.forceGeneTreeRoot) {
+    enforcedRootedGeneTree = newickString;
+  }
   reconciliationEvaluation_ = std::make_shared<ReconciliationEvaluation>(_speciesTree,  
       getGeneTree(),
       _geneSpeciesMap, 
-      recModelInfo
+      recModelInfo,
+      enforcedRootedGeneTree
       );
   Logger::info << ratesVector << std::endl;
   setRates(ratesVector);

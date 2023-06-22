@@ -99,6 +99,7 @@ PerCoreGeneTrees::PerCoreGeneTrees(const Families &families,
       if (!ccpMode) {
         _geneTrees[index].geneTree = new PLLUnrootedTree(currentGeneTreeStr, false);
       }
+      _geneTrees[index].startingGeneTreeFile = families[i].startingGeneTree;
       _geneTrees[index].ownTree = true;
       index++;
     }

@@ -18,12 +18,14 @@ double log(ScaledValue v)
 ReconciliationEvaluation::ReconciliationEvaluation(PLLRootedTree  &speciesTree,
   PLLUnrootedTree &initialGeneTree,
   const GeneSpeciesMapping& geneSpeciesMapping,
-  const RecModelInfo &recModelInfo):
+  const RecModelInfo &recModelInfo,
+  const std::string &forcedRootedGeneTree):
     _speciesTree(speciesTree),
     _initialGeneTree(initialGeneTree),
     _geneSpeciesMapping(geneSpeciesMapping),
     _recModelInfo(recModelInfo),
-    _infinitePrecision(true)
+    _infinitePrecision(true),
+    _forcedRootedGeneTree(forcedRootedGeneTree)
 {
   _evaluators = buildRecModelObject(_recModelInfo.model, 
       _infinitePrecision);
@@ -117,7 +119,12 @@ GTBaseReconciliationInterface *ReconciliationEvaluation::buildRecModelObject(Rec
     }
     break;
   }
-  res->setInitialGeneTree(_initialGeneTree);
+  corax_unode_t *forcedGeneRoot = nullptr;
+  if (_forcedRootedGeneTree.size() > 0) {
+    auto rooted = PLLRootedTree::buildFromStrOrFile(_forcedRootedGeneTree);
+    forcedGeneRoot = _initialGeneTree.getVirtualRoot(*rooted);
+  }
+  res->setInitialGeneTree(_initialGeneTree, forcedGeneRoot);
   return res;
 }
   

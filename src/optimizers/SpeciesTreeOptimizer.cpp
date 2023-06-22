@@ -240,7 +240,11 @@ void SpeciesTreeOptimizer::updateEvaluations()
   _evaluations.resize(trees.size());
   for (unsigned int i = 0; i < trees.size(); ++i) {
     auto &tree = trees[i];
-    _evaluations[i] = std::make_shared<ReconciliationEvaluation>(_speciesTree->getTree(), *tree.geneTree, tree.mapping, _modelRates.info);
+    std::string enforcedRootedGeneTree;
+    if (_modelRates.info.forceGeneTreeRoot) {
+      enforcedRootedGeneTree = tree.startingGeneTreeFile;
+    }
+    _evaluations[i] = std::make_shared<ReconciliationEvaluation>(_speciesTree->getTree(), *tree.geneTree, tree.mapping, _modelRates.info, enforcedRootedGeneTree);
     _evaluations[i]->setRates(_modelRates.getRates(i));
     _evaluations[i]->setPartialLikelihoodMode(PartialLikelihoodMode::PartialSpecies);
   }
