@@ -7,6 +7,9 @@
 #include <sstream>
 #include <deque>
 #include <IO/LibpllException.hpp>
+#include <corax/tree/utree_compare.h>
+#include <corax/io/newick.hpp>
+#include <fstream>
 
 void defaultUnodePrinter(corax_unode_t *node, 
     std::stringstream &ss)
@@ -32,7 +35,9 @@ void utreeDestroy(corax_utree_t *utree) {
 
 static corax_utree_t *readNewickFromStr(const std::string &str) 
 {
-  auto utree =  corax_utree_parse_newick_string_unroot(str.c_str());
+  corax_newick_parser_t parser(str);
+  auto utree = parser.parse(true, true);  
+  //auto utree = corax_utree_parse_newick_string_unroot(str.c_str());
   if (!utree) 
     throw LibpllException("Error while reading tree from std::string: ", str);
   return utree;
@@ -41,10 +46,15 @@ static corax_utree_t *readNewickFromStr(const std::string &str)
 
 static corax_utree_t *readNewickFromFile(const std::string &str)
 {
-  auto utree =  corax_utree_parse_newick_unroot(str.c_str());
-  if (!utree) 
+  std::ifstream is(str);
+  if (!is) {
+    throw LibpllException("Can't open file: ", str);
+  }
+  std::string newick;
+  if (!std::getline(is, newick)) {
     throw LibpllException("Error while reading tree from file: ", str);
-  return utree;
+  }
+  return readNewickFromStr(newick);
 }
 
 static corax_utree_t *buildUtree(const std::string &str, bool isFile)
@@ -80,6 +90,32 @@ std::unique_ptr<PLLUnrootedTree> PLLUnrootedTree::buildFromStrOrFile(const std::
   return res;
 }
 
+std::unique_ptr<PLLUnrootedTree> PLLUnrootedTree::buildConsensusTree(
+    std::vector<std::string> &strOrFiles, 
+      double threshold)
+{
+  std::vector<std::shared_ptr<PLLUnrootedTree> >trees;
+  std::vector<const corax_utree_t*> treePointers;
+  std::vector<double> weights;
+  for (const auto &str: strOrFiles) {
+    trees.push_back(buildFromStrOrFile(str));
+    treePointers.push_back(trees.back()->getRawPtr());
+  }
+  auto weight = 1.0 / static_cast<double>(treePointers.size());
+  weights = std::vector<double>(treePointers.size(), weight);
+  auto consensus = corax_utree_weight_consensus(&treePointers[0],
+        &weights[0],
+        threshold,
+        treePointers.size());
+  assert(consensus);
+  assert(consensus->tree);
+  auto node = consensus->tree;
+  auto newick = corax_utree_export_newick(node, 0);
+  auto res = buildFromStrOrFile(newick);
+  corax_utree_consensus_destroy(consensus);
+  free(newick);
+  return res;
+}
 
 PLLUnrootedTree::PLLUnrootedTree(const std::vector<const char*> &labels,
     unsigned int seed):
@@ -548,9 +584,13 @@ static void printAux(corax_unode_t *node,
 {
   if (node->next) {
     ss << "(";
-    printAux(node->next->back, ss, f);
-    ss << ",";
-    printAux(node->next->next->back, ss, f);
+    auto temp = node->next;
+    printAux(temp->back, ss, f);
+    while (temp->next != node) {
+      temp = temp->next;
+      ss << ",";
+      printAux(temp->back, ss, f);
+    }
     ss << ")";
   }
   f(node, ss);
@@ -579,10 +619,12 @@ std::string PLLUnrootedTree::getNewickString(UnodePrinter f,
     std::stringstream ss;
     ss << "(";
     printAux(root->back, ss, f);
-    ss << ",";
-    printAux(root->next->back, ss, f);
-    ss << ",";
-    printAux(root->next->next->back, ss, f);
+    auto temp = root->next;
+    while (temp != root) {
+      ss << ",";
+      printAux(temp->back, ss, f);
+      temp = temp->next;
+    }
     ss << ");";
     return ss.str();
   }

@@ -38,6 +38,8 @@ public:
   PLLUnrootedTree(PLLRootedTree &rootedTree);
 
   static std::unique_ptr<PLLUnrootedTree> buildFromStrOrFile(const std::string &strOrFile);
+  static std::unique_ptr<PLLUnrootedTree> buildConsensusTree(std::vector<std::string> &strOrFiles, 
+      double threshold = 0.51);
 
   /**
    *  Construct a random tree from a set of taxa labels
