@@ -115,12 +115,12 @@ static void writeEventRecPhyloXML(unsigned int geneIndex,
   auto species = speciesTree->nodes[event.speciesNode];
   corax_rnode_t *speciesOut = 0;
   os << indent << "<eventsRec>" << std::endl;
-  bool previousWasTransfer = previousEvent->type 
-    == ReconciliationEventType::EVENT_T || previousEvent->type == ReconciliationEventType::EVENT_TL;
-  if (previousWasTransfer && geneIndex == previousEvent->rightGeneIndex && event.type 
-      != ReconciliationEventType::EVENT_L) {
-    auto previousEventSpeciesOut = speciesTree->nodes[previousEvent->destSpeciesNode];
-    os << indent << "\t<transferBack destinationSpecies=\"" << previousEventSpeciesOut->label << "\"/>" << std::endl;
+  if (event.type != ReconciliationEventType::EVENT_L) {
+   if ((previousEvent->type == ReconciliationEventType::EVENT_T && geneIndex == previousEvent->rightGeneIndex) || previousEvent->type == ReconciliationEventType::EVENT_TL) {
+      auto previousEventSpeciesOut = speciesTree->nodes[previousEvent->destSpeciesNode];
+      os << indent << "\t<transferBack destinationSpecies=\"" << previousEventSpeciesOut->label << "\"/>" << std::endl;
+    
+    }
   }
   
   switch(event.type) {

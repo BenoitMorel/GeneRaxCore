@@ -68,6 +68,8 @@ public:
       geneNode(INVALID_NODE_ID), 
       speciesNode(INVALID_NODE_ID), 
       destSpeciesNode(INVALID_NODE_ID),
+      leftGeneIndex(INVALID_NODE_ID),
+      rightGeneIndex(INVALID_NODE_ID),
       pllTransferedGeneNode(nullptr),
       pllDestSpeciesNode(nullptr),
       pllLostSpeciesNode(nullptr)
