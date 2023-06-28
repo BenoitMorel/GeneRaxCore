@@ -129,14 +129,13 @@ std::string PLLUnrootedTree::buildConsensusTree(
     std::vector<std::string> &strOrFiles, 
       double threshold)
 {
-  threshold = 0.6;
   std::vector<std::shared_ptr<PLLUnrootedTree> >trees;
   std::vector<const corax_utree_t*> treePointers;
   std::vector<double> weights;
   for (const auto &str: strOrFiles) {
     trees.push_back(buildFromStrOrFile(str));
     treePointers.push_back(trees.back()->getRawPtr());
-    treePointers.push_back(trees.back()->getRawPtr());
+    std::cerr << trees.back()->getNewickString() << std::endl;
   }
   auto weight = 1.0 / static_cast<double>(treePointers.size());
   weights = std::vector<double>(treePointers.size(), weight);
