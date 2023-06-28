@@ -131,13 +131,8 @@ std::unique_ptr<PLLUnrootedTree> PLLUnrootedTree::buildConsensusTree(
   std::vector<std::shared_ptr<PLLUnrootedTree> >trees;
   std::vector<const corax_utree_t*> treePointers;
   std::vector<double> weights;
-  std::string hc = "((a,b), (c,d));";
-  hc = "((((15u0u0:0.043426,((14u0u0:1.0,13u0u0:1.0)1:0.014074,2u2u0:0.042237)1:1.0)1:0.189284,11u0u0:0.156894)1:1.0,((4u3u0:1.0,2u4u0:0.013457)1:0.013227,((((5u4u0:1.0,(1u4u0:0.027006,(4u0u0:1.0,6u0u0:1.0)1:0.058328)1:1.0)1:1.0,((8u4u0:1.0,12u0u0:1.0)1:0.028758,(2u3u0:1.0,(5u3u0:1.0,1u3u0:1.0)1:0.013287)1:0.027096)1:0.013241)1:1.0,(8u5u0:1.0,6u3u0:1.0)1:1.0)1:1.0,(((2u0u0:1.0,2u6u0:0.01333)1:0.013266,(5u0u0:1.0,1u0u0:1.0)1:1.0)1:1.0,((4u2u0:1.0,(6u2u0:1.0,(8u0u0:1.0,((5u2u0:0.04327,1u2u0:1.0)1:0.027802,8u2u0:0.01329)1:1.0)1:1.0)1:0.013346)1:0.05721,(8u3u0:1.0,2u5u0:1.0):1.0)1:0.013277)1:0.072911)1:0.013222)1:1.0)1:0.040848,5u5u0:1.0,1u5u0:1.0);";
   for (const auto &str: strOrFiles) {
-    //trees.push_back(buildFromStrOrFile(str));
-    trees.push_back(buildFromStrOrFile(hc));
-    std::cerr << trees.back()->getNewickString() << std::endl;
-    assert(trees.back()->isBinary());
+    trees.push_back(buildFromStrOrFile(str));
     treePointers.push_back(trees.back()->getRawPtr());
     treePointers.push_back(trees.back()->getRawPtr());
   }
