@@ -94,16 +94,18 @@ char *consensus_serialize(const corax_unode_t *node)
 {
   
   std::string newick;
+  assert(node->next != node);
   if (node->next) {
-    if (node->data) {
-      auto data = static_cast<corax_consensus_data_t *>(node->data);
+    
+    auto data = static_cast<corax_consensus_data_t *>(node->data);
+    if (data) {
       newick += std::to_string(data->support);
     }
   } else if (node->label) {
     newick += node->label;
   }
+  // we don't have the branch lengths
   newick += ":0.1";
-  //newick += std::to_string(node->length);
   char *res = static_cast<char*>(malloc(sizeof(char) * (newick.size() + 1)));
   res[newick.size()] = '\0';
   memcpy(res, newick.c_str(), newick.size());
@@ -123,7 +125,7 @@ void PLLUnrootedTree::setLabel(unsigned int nodeIndex, const std::string &label)
 }
   
 
-std::unique_ptr<PLLUnrootedTree> PLLUnrootedTree::buildConsensusTree(
+std::string PLLUnrootedTree::buildConsensusTree(
     std::vector<std::string> &strOrFiles, 
       double threshold)
 {
@@ -148,15 +150,7 @@ std::unique_ptr<PLLUnrootedTree> PLLUnrootedTree::buildConsensusTree(
   assert(consensus->tree);
   auto node = consensus->tree;
   auto newick = corax_utree_export_newick(node, consensus_serialize);
-  //std::cerr << newick << std::endl; 
-  auto res = buildFromStrOrFile(newick);
-  //std::cerr << "newick " << std::endl;
-  //std::cerr << newick << std::endl;
-  //std::cerr << "coucou " << node->data << std::endl;
-  corax_utree_consensus_destroy(consensus);
-  free(newick);
-  return res;
- //return std::make_unique<PLLUnrootedTree>(strOrFiles[0], false);
+  return newick;
 }
 
 

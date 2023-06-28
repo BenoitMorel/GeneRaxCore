@@ -38,7 +38,7 @@ public:
   PLLUnrootedTree(PLLRootedTree &rootedTree);
 
   static std::unique_ptr<PLLUnrootedTree> buildFromStrOrFile(const std::string &strOrFile);
-  static std::unique_ptr<PLLUnrootedTree> buildConsensusTree(std::vector<std::string> &strOrFiles, 
+  static std::string buildConsensusTree(std::vector<std::string> &strOrFiles, 
       double threshold = 0.51);
 
   /**
