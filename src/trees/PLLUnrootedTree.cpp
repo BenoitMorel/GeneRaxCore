@@ -135,7 +135,7 @@ std::string PLLUnrootedTree::buildConsensusTree(
   for (const auto &str: strOrFiles) {
     trees.push_back(buildFromStrOrFile(str));
     treePointers.push_back(trees.back()->getRawPtr());
-    std::cerr << trees.back()->getNewickString() << std::endl;
+    corax_utree_consistency_set(trees[0]->getRawPtr(), trees.back()->getRawPtr());
   }
   auto weight = 1.0 / static_cast<double>(treePointers.size());
   weights = std::vector<double>(treePointers.size(), weight);
