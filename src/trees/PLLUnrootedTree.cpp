@@ -90,32 +90,80 @@ std::unique_ptr<PLLUnrootedTree> PLLUnrootedTree::buildFromStrOrFile(const std::
   return res;
 }
 
+char *consensus_serialize(const corax_unode_t *node)
+{
+  
+  std::string newick;
+  if (node->next) {
+    if (node->data) {
+      auto data = static_cast<corax_consensus_data_t *>(node->data);
+      newick += std::to_string(data->support);
+    }
+  } else if (node->label) {
+    newick += node->label;
+  }
+  newick += ":0.1";
+  //newick += std::to_string(node->length);
+  char *res = static_cast<char*>(malloc(sizeof(char) * (newick.size() + 1)));
+  res[newick.size()] = '\0';
+  memcpy(res, newick.c_str(), newick.size());
+  return res;
+}
+
+static void setNodeLabel(corax_unode_t *node, const std::string &label)
+{
+  free(node->label);
+  node->label = static_cast<char*>(malloc(sizeof(char) * (label.size() + 1)));
+  std::strcpy(node->label, label.c_str());
+}
+
+void PLLUnrootedTree::setLabel(unsigned int nodeIndex, const std::string &label)
+{
+  setNodeLabel(getNode(nodeIndex), label);
+}
+  
+
 std::unique_ptr<PLLUnrootedTree> PLLUnrootedTree::buildConsensusTree(
     std::vector<std::string> &strOrFiles, 
       double threshold)
 {
+  threshold = 0.6;
   std::vector<std::shared_ptr<PLLUnrootedTree> >trees;
   std::vector<const corax_utree_t*> treePointers;
   std::vector<double> weights;
+  std::string hc = "((a,b), (c,d));";
+  hc = "((((15u0u0:0.043426,((14u0u0:1.0,13u0u0:1.0)1:0.014074,2u2u0:0.042237)1:1.0)1:0.189284,11u0u0:0.156894)1:1.0,((4u3u0:1.0,2u4u0:0.013457)1:0.013227,((((5u4u0:1.0,(1u4u0:0.027006,(4u0u0:1.0,6u0u0:1.0)1:0.058328)1:1.0)1:1.0,((8u4u0:1.0,12u0u0:1.0)1:0.028758,(2u3u0:1.0,(5u3u0:1.0,1u3u0:1.0)1:0.013287)1:0.027096)1:0.013241)1:1.0,(8u5u0:1.0,6u3u0:1.0)1:1.0)1:1.0,(((2u0u0:1.0,2u6u0:0.01333)1:0.013266,(5u0u0:1.0,1u0u0:1.0)1:1.0)1:1.0,((4u2u0:1.0,(6u2u0:1.0,(8u0u0:1.0,((5u2u0:0.04327,1u2u0:1.0)1:0.027802,8u2u0:0.01329)1:1.0)1:1.0)1:0.013346)1:0.05721,(8u3u0:1.0,2u5u0:1.0):1.0)1:0.013277)1:0.072911)1:0.013222)1:1.0)1:0.040848,5u5u0:1.0,1u5u0:1.0);";
   for (const auto &str: strOrFiles) {
-    trees.push_back(buildFromStrOrFile(str));
+    //trees.push_back(buildFromStrOrFile(str));
+    trees.push_back(buildFromStrOrFile(hc));
+    std::cerr << trees.back()->getNewickString() << std::endl;
+    assert(trees.back()->isBinary());
+    treePointers.push_back(trees.back()->getRawPtr());
     treePointers.push_back(trees.back()->getRawPtr());
   }
   auto weight = 1.0 / static_cast<double>(treePointers.size());
   weights = std::vector<double>(treePointers.size(), weight);
-  auto consensus = corax_utree_weight_consensus(&treePointers[0],
-        &weights[0],
+  assert(treePointers.size());
+  assert(weights.size());
+  auto consensus = corax_utree_weight_consensus(&(treePointers[0]),
+        &(weights[0]),
         threshold,
         treePointers.size());
   assert(consensus);
   assert(consensus->tree);
   auto node = consensus->tree;
-  auto newick = corax_utree_export_newick(node, 0);
+  auto newick = corax_utree_export_newick(node, consensus_serialize);
+  //std::cerr << newick << std::endl; 
   auto res = buildFromStrOrFile(newick);
+  //std::cerr << "newick " << std::endl;
+  //std::cerr << newick << std::endl;
+  //std::cerr << "coucou " << node->data << std::endl;
   corax_utree_consensus_destroy(consensus);
   free(newick);
   return res;
+ //return std::make_unique<PLLUnrootedTree>(strOrFiles[0], false);
 }
+
 
 PLLUnrootedTree::PLLUnrootedTree(const std::vector<const char*> &labels,
     unsigned int seed):

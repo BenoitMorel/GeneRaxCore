@@ -63,6 +63,7 @@ double LibpllEvaluation::raxmlSPRRounds(unsigned int minRadius,
     cutoff_info.lh_dec_sum = 0.;
     cutoff_info.lh_cutoff = computeLikelihood(false) / -1000.0;
   }
+  double lh_epsilon_brlen_triplet = 0.1;
   return corax_algo_spr_round(getTreeInfo(),
       static_cast<int>(minRadius),
       static_cast<int>(maxRadius),
@@ -74,7 +75,8 @@ double LibpllEvaluation::raxmlSPRRounds(unsigned int minRadius,
       RAXML_BRLEN_SMOOTHINGS,
       0.1,
       (fabs(cutoff) < std::numeric_limits<double>::epsilon()) ? 0 : &cutoff_info, //cutoff_info_t * cutoff_info,
-      cutoff); //double subtree_cutoff);
+      cutoff,  //double subtree_cutoff);
+      lh_epsilon_brlen_triplet);
 }
 
 
