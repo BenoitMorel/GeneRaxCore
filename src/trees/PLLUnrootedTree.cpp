@@ -129,6 +129,8 @@ std::string PLLUnrootedTree::buildConsensusTree(
     std::vector<std::string> &strOrFiles, 
       double threshold)
 {
+
+  assert(threshold >= 0.0 && threshold <= 1.0);
   std::vector<std::shared_ptr<PLLUnrootedTree> >trees;
   std::vector<const corax_utree_t*> treePointers;
   std::vector<double> weights;
