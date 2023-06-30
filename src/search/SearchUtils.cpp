@@ -68,60 +68,6 @@ struct less_than_move_ptr
   }
 };
 
-
-bool SearchUtils::findBetterMoves(JointTree &jointTree,
-  std::vector<std::shared_ptr<SPRMove> > &allMoves,
-  std::vector<std::shared_ptr<SPRMove> > &sortedBetterMoves,
-  bool blo)
-{
-  double initialReconciliationLoglk = jointTree.computeReconciliationLoglk();
-  double initialLibpllLoglk = jointTree.computeLibpllLoglk();
-  double initialLoglk = initialLibpllLoglk + initialReconciliationLoglk;
-  auto begin = ParallelContext::getBegin(static_cast<unsigned int>(allMoves.size()));
-  auto end = ParallelContext::getEnd(static_cast<unsigned int>(allMoves.size()));
-  std::vector<unsigned int> localGoodIndices;
-  std::vector<double> localGoodLL;
-  std::vector<unsigned int> goodIndices;
-  std::vector<double> goodLL;
-  double epsilon = fabs(initialLoglk) > 10000.0 ? 0.5 : 0.001; 
-  for (auto i = begin; i < end; ++i) {
-    auto loglk = initialLoglk;
-    SearchUtils::testMove(jointTree, *allMoves[i], 
-        loglk,
-        blo);
-    if (loglk - initialLoglk > epsilon) {
-      localGoodIndices.push_back(i);
-      localGoodLL.push_back(allMoves[i]->getScore());
-      assert(allMoves[i]->getScore() != 0.0);
-    }
-  }
-  ParallelContext::concatenateHetherogeneousUIntVectors(localGoodIndices, 
-      goodIndices); 
-  ParallelContext::concatenateHetherogeneousDoubleVectors(localGoodLL, 
-      goodLL);
-  assert(ParallelContext::isIntEqual(goodIndices.size()));
-  assert(goodIndices.size() == goodLL.size());
-  for (unsigned int i = 0; i < goodIndices.size(); ++i) {
-    unsigned int index = goodIndices[i];
-    double ll = goodLL[i];
-    assert(ParallelContext::isIntEqual(index));
-    assert(ParallelContext::isDoubleEqual(ll));
-    auto move = allMoves[index];
-    move->setScore(ll);
-    sortedBetterMoves.push_back(move);
-  }
-  for (auto move: sortedBetterMoves) {
-    assert(ParallelContext::isIntEqual(move->getPruneIndex()));
-  }
-  std::sort(sortedBetterMoves.rbegin(), sortedBetterMoves.rend(), less_than_move_ptr()); 
-  for (auto move: sortedBetterMoves) {
-    assert(ParallelContext::isIntEqual(move->getPruneIndex()));
-  }
-  jointTree.getReconciliationEvaluation().invalidateAllCLVs();
-  return 0 < sortedBetterMoves.size();
-}
-
-
 static void diggRecursive(JointTree &jointTree,
     std::unordered_map<unsigned int, double> &treeHashScores,
     DiggStopper &stopper,
@@ -166,7 +112,7 @@ static void diggRecursive(JointTree &jointTree,
 
   // continue 
   radius += 1;
-  if (regraftNode->next && radius < maxRadius && !stopper.doStop(diff, radius)) {
+  if (regraftNode->next && radius < maxRadius && !stopper.doStop(diff, radius) && jointTree.canSPRCrossBranch(regraftNode)) {
     auto left = regraftNode->next->back;
     auto right = regraftNode->next->next->back;
     path.push_back(regraftNode->node_index);
