@@ -60,7 +60,7 @@ public:
     ReconciliationEvaluation &getReconciliationEvaluation() {return *reconciliationEvaluation_;}
     std::shared_ptr<ReconciliationEvaluation> getReconciliationEvaluationPtr() {return reconciliationEvaluation_;}
     
-    corax_unode_t *getRoot() {return reconciliationEvaluation_->getRoot();}
+    corax_unode_t *getRoot() const {return reconciliationEvaluation_->getRoot();}
     void setRoot(corax_unode_t * root) {reconciliationEvaluation_->setRoot(root);}
     const Parameters &getRatesVector() const {return _ratesVector;}
     void inferMLScenario(Scenario &scenario) {
@@ -74,6 +74,12 @@ public:
     Model &getModel() {return _libpllEvaluation.getModel();} 
     const GeneSpeciesMapping &getMappings() const {return _geneSpeciesMap;}
     double getSupportThreshold() const {return _supportThreshold;}
+    /**
+     *  Are we allowed to apply a move that would move a prune node that is
+     *  on one side of branch to the other side of branch?
+     *  This might be constrained by the enforced gene root for instance
+     */
+    bool canSPRCrossBranch(const corax_unode_t *branch) const;
 private:
     LibpllEvaluation _libpllEvaluation;
     std::shared_ptr<ReconciliationEvaluation> reconciliationEvaluation_;
@@ -89,6 +95,7 @@ private:
     double _recWeight;
     double _supportThreshold;
     bool _madRooting;
+    std::string _enforcedRootedGeneTree;
 };
 
 

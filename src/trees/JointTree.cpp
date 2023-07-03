@@ -136,15 +136,14 @@ JointTree::JointTree(const std::string &newickString,
   _madRooting(madRooting)
 {
   _geneSpeciesMap.fill(geneSpeciesMapfile, newickString);
-  std::string enforcedRootedGeneTree;
   if (recModelInfo.forceGeneTreeRoot) {
-    enforcedRootedGeneTree = newickString;
+    _enforcedRootedGeneTree = newickString;
   }
   reconciliationEvaluation_ = std::make_shared<ReconciliationEvaluation>(_speciesTree,  
       getGeneTree(),
       _geneSpeciesMap, 
       recModelInfo,
-      enforcedRootedGeneTree
+      _enforcedRootedGeneTree
       );
   Logger::info << ratesVector << std::endl;
   setRates(ratesVector);
@@ -278,5 +277,16 @@ void JointTree::printInfo()
   Logger::info << "Gene leaves: " << geneLeaves << std::endl;
   Logger::info << "Sites: " << sites << std::endl;
   Logger::info << std::endl;
+}
+    
+bool JointTree::canSPRCrossBranch(const corax_unode_t *branch) const
+{
+  if (_enforcedRootedGeneTree.size() == 0) {
+    return true;
+  }
+  auto root = getRoot();
+  assert(root);
+  assert(branch);
+  return branch != root && branch->back != root;
 }
 

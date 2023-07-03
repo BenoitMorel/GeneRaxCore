@@ -69,27 +69,6 @@ public:
     std::unordered_map<unsigned int, double> *treeHashScore = nullptr
     );
 
-
-  /**
-   *  Test all input SPR moves in parallel, and fill sortedBetterMoves
-   *  with all the SPR moves that improve the likelihood, sorted by
-   *  decreasing likelihood
-   *
-   *  @param jointTree The current tree
-   *  @param allMoves The moves to test
-   *  @param sortedBetterMoves The output better moves
-   *  @param blo Do we apply branch length optimization?
-   *  @param check Safety check for debugging purpose (it's expensive)
-   *
-   *  Parallelization: this function is parallelized over the moves 
-   *  to test. 
-   *
-   */
-  static bool findBetterMoves(JointTree &jointTree,
-    std::vector<std::shared_ptr<SPRMove> > &allMoves,
-    std::vector<std::shared_ptr<SPRMove> > &sortedBetterMoves,
-    bool blo);
-
   /**
    *
    *  Find the best SPR move for a given prune index under a given radius
