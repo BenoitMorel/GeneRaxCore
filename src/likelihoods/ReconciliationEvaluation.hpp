@@ -78,7 +78,9 @@ public:
  
   corax_unode_t *inferMLRoot();
   
-  void inferMLScenario(Scenario &scenario, bool stochastic = false);
+  void inferMLScenario(Scenario &scenario);
+  void sampleReconciliations(unsigned int samples,
+      std::vector< std::shared_ptr<Scenario> > &scenarios);
 
   RecModel getRecModel() const {return _recModelInfo.model;}
   

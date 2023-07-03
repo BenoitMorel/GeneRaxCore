@@ -413,7 +413,7 @@ void Scenario::saveAllOrthoGroups(std::string &filename, bool masterRankOnly) co
 
 
 void Scenario::saveTransferPairCountGlobal(PLLRootedTree &speciesTree,
-    std::vector<Scenario> &scenarios,
+    std::vector< std::shared_ptr<Scenario> > &scenarios,
     const std::string &filename)
 {
   const auto labelToId = speciesTree.getDeterministicLabelToId();
@@ -422,7 +422,7 @@ void Scenario::saveTransferPairCountGlobal(PLLRootedTree &speciesTree,
   const VectorUint zeros(N, 0);
   auto countMatrix = MatrixUint(N, zeros);
   for (auto &scenario: scenarios) {
-    scenario.countTransfers(labelToId, countMatrix);
+    scenario->countTransfers(labelToId, countMatrix);
   }
   std::vector<TransferPair> transferPairs;
   for (unsigned int i = 0; i < N; ++i) {

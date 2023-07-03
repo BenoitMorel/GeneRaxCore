@@ -17,8 +17,6 @@ class GTBaseReconciliationInterface: public BaseReconciliationModel {
   virtual double computeLogLikelihood() = 0;
   virtual void setInitialGeneTree(PLLUnrootedTree &tree,
     corax_unode_t *forcedGeneRoot) = 0;
-  virtual bool inferMLScenario(Scenario &scenario, 
-      bool stochastic = false) = 0;
   virtual bool isParsimony() const = 0;
   virtual void setRoot(corax_unode_t * root) = 0;
   virtual corax_unode_t *getRoot() = 0;
@@ -43,7 +41,9 @@ public:
   virtual double computeLogLikelihood();
   virtual void setInitialGeneTree(PLLUnrootedTree &tree,
       corax_unode_t *forcedGeneRoot);
-  virtual bool inferMLScenario(Scenario &scenario, bool stochastic = false);
+  virtual bool inferMLScenario(Scenario &scenario);
+  virtual bool sampleReconciliations(unsigned int samples,
+      std::vector< std::shared_ptr<Scenario> > &scenarios);
   virtual bool isParsimony() const {return false;}
   virtual void setRoot(corax_unode_t * root) {_geneRoot = root;}
   virtual corax_unode_t *getRoot() {return _geneRoot;}
@@ -98,6 +98,7 @@ private:
   void markInvalidatedNodesRec(corax_unode_t *node);
   virtual void computeLikelihoods();
   double getSumLikelihood();
+  bool _computeScenario(Scenario &scenario, bool stochastic = false);
 
 protected:
   corax_unode_t *_geneRoot;
@@ -541,7 +542,26 @@ void GTBaseReconciliationModel<REAL>::computeLikelihoods()
 }
 
 template <class REAL>
-bool GTBaseReconciliationModel<REAL>::inferMLScenario(Scenario &scenario, bool stochastic)
+bool GTBaseReconciliationModel<REAL>::sampleReconciliations(unsigned int samples,
+    std::vector< std::shared_ptr<Scenario> > &scenarios)
+{
+  for (unsigned int i = 0; i < samples; ++i) {
+    scenarios.push_back(std::make_shared<Scenario>());
+    if (!_computeScenario(*scenarios.back(), true)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+template <class REAL>
+bool GTBaseReconciliationModel<REAL>::inferMLScenario(Scenario &scenario)
+{
+  return _computeScenario(scenario, false);
+}
+
+template <class REAL>
+bool GTBaseReconciliationModel<REAL>::_computeScenario(Scenario &scenario, bool stochastic)
 {
   // make sure the CLVs are filled
   invalidateAllCLVs();

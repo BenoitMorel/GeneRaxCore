@@ -11,6 +11,7 @@
 #include <maths/ScaledValue.hpp>
 #include <trees/PLLRootedTree.hpp>
 #include <maths/Random.hpp>
+#include <memory>
 
 #define IS_PROBA(x) (x == x) //(REAL(0.0) <= REAL(x) && REAL(x)  <= REAL(1.0)))
 #define ASSERT_PROBA(x) assert(IS_PROBA(x));
@@ -58,9 +59,17 @@ public:
   /**
    *  Fill scenario with the maximum likelihood set of 
    *  events that would lead to the  current tree
+   *  Return true in case of success
    **/
-  virtual bool inferMLScenario(Scenario &scenario, bool stochastic = false) = 0;
+  virtual bool inferMLScenario(Scenario &scenario) = 0;
 
+  /**
+   *  Sample scenarios and add them to the scenarios vector
+   *  Return true in case of success
+   */
+  virtual bool sampleReconciliations(unsigned int samples,
+      std::vector< std::shared_ptr<Scenario> > &scenarios) = 0;
+  
   /**
    *  Should be called after each change in the species tree topology
    */

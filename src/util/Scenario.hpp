@@ -154,7 +154,7 @@ public:
   void saveReconciliation(const std::string &filename, ReconciliationFormat format, bool masterRankOnly = true);
   void saveReconciliation(ParallelOfstream &os, ReconciliationFormat format);
   static void saveTransferPairCountGlobal(PLLRootedTree &speciesTree,
-      std::vector<Scenario> &scenarios,
+      std::vector< std::shared_ptr<Scenario> > &scenarios,
       const std::string &filename);
 
   void saveLargestOrthoGroup(std::string &filename, bool masterRankOnly = true) const;

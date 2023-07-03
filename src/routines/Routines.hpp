@@ -132,7 +132,7 @@ public:
     const ModelParameters &initialModelRates,
     unsigned int reconciliationSamples, // 0 for ML
     bool optimizeRates,
-    std::vector<Scenario> &scenarios);
+    std::vector< std::shared_ptr<Scenario> > &scenarios);
  
   /**
    *  todobenoit

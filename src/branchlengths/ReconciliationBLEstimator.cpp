@@ -167,7 +167,7 @@ void ReconciliationBLEstimator::estimate(
     PerCoreGeneTrees geneTrees(families);
     const unsigned int samples = 0;
     const bool optimizeRates = false;
-    std::vector<Scenario> scenarios;
+    std::vector< std::shared_ptr<Scenario> > scenarios;
     Logger::timed << std::endl;
     Logger::timed << "[Species BL estimation] Infering reconciliation scenarios" << std::endl;
     Routines::inferAndGetReconciliationScenarios(speciesTree,
@@ -183,7 +183,7 @@ void ReconciliationBLEstimator::estimate(
     Logger::timed << "[Species BL estimation] Infering branch lengths from gene trees" << std::endl;
     for (unsigned int i = 0; i < geneTrees.getTrees().size(); ++i) {
       double familyWeight = getFamilyWeight(families[geneTrees.getTrees()[i].familyIndex]);
-      estimateBLForFamily(scenarios[i],
+      estimateBLForFamily(*scenarios[i],
         familyWeight,
         speciesSumBL,
         speciesWeightBL);

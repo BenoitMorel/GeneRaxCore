@@ -138,12 +138,23 @@ void ReconciliationEvaluation::updatePrecision(bool infinitePrecision)
     _evaluators->setRates(_rates);
  }
 }
-void ReconciliationEvaluation::inferMLScenario(Scenario &scenario, bool stochastic) {
+void ReconciliationEvaluation::inferMLScenario(Scenario &scenario) {
   auto infinitePrecision = _infinitePrecision;
   updatePrecision(true);
   auto ll = evaluate();
   assert(std::isfinite(ll) && ll <= 0.0);
-  _evaluators->inferMLScenario(scenario, stochastic);
+  assert(_evaluators->inferMLScenario(scenario));
+  updatePrecision(infinitePrecision);
+}
+
+void ReconciliationEvaluation::sampleReconciliations(unsigned int samples,
+      std::vector< std::shared_ptr<Scenario> > &scenarios)
+{
+  auto infinitePrecision = _infinitePrecision;
+  updatePrecision(true);
+  auto ll = evaluate();
+  assert(std::isfinite(ll) && ll <= 0.0);
+  assert(_evaluators->sampleReconciliations(samples, scenarios));
   updatePrecision(infinitePrecision);
 }
   
