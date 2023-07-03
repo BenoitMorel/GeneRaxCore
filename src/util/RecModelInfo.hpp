@@ -36,7 +36,10 @@ struct RecModelInfo {
 
   std::string fractionMissingFile;
  
-    
+  // use less memory (but likelihood evaluation might be slower)
+  // some models do not implement this function
+  bool memorySavings;
+
   RecModelInfo():
     model(RecModel::UndatedDTL),
     perFamilyRates(true),
@@ -49,7 +52,8 @@ struct RecModelInfo {
     branchLengthThreshold(-1.0),
     transferConstraint(TransferConstaint::PARENTS),
     noDup(false),
-    noTL(false)
+    noTL(false),
+    memorySavings(false)
   {
 
   }
@@ -66,7 +70,8 @@ struct RecModelInfo {
       TransferConstaint transferConstraint,
       bool noDup,
       bool noTL,
-      const std::string &fractionMissingFile):
+      const std::string &fractionMissingFile,
+      bool memorySavings):
     model(model),
     perFamilyRates(perFamilyRates),
     gammaCategories(gammaCategories),
@@ -79,7 +84,8 @@ struct RecModelInfo {
     transferConstraint(transferConstraint),
     noDup(noDup),
     noTL(noTL),
-    fractionMissingFile(fractionMissingFile)
+    fractionMissingFile(fractionMissingFile),
+    memorySavings(memorySavings)
   {
 
   }
@@ -103,6 +109,7 @@ struct RecModelInfo {
     if (fractionMissingFile == "NONE") {
       fractionMissingFile = std::string();
     }
+    memorySavings = bool(atoi(argv[i++]));
   }
 
   std::vector<std::string> getArgv() const
@@ -125,12 +132,13 @@ struct RecModelInfo {
     } else {
       argv.push_back(std::string("NONE"));
     }
+    argv.push_back(std::to_string(static_cast<int>(memorySavings)));
     return argv;
   }
 
   static int getArgc() 
   {
-    return 13;
+    return 14;
   }
 
   unsigned int modelFreeParameters() const {
