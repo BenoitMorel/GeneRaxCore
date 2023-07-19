@@ -44,7 +44,8 @@ public:
    */
   static ScoredBackups optimizeDatesFromReconciliation(SpeciesTree &speciesTree,
       SpeciesTreeLikelihoodEvaluatorInterface &evaluation,
-      unsigned int searches);
+      unsigned int searches,
+      unsigned int toEvaluate = 10);
 
 };
 

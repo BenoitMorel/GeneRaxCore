@@ -71,7 +71,8 @@ class ConditionalClades {
   ConditionalClades() {}
   ConditionalClades(const std::string &inputFile,
       const std::string &likelihoods,
-      CCPRooting ccpRooting);
+      CCPRooting ccpRooting,
+      unsigned int sampleFrequency = 1);
   void printContent() const; 
   void printStats() const;
   unsigned int getCladesNumber() const {return _cladeToCID.size();}
@@ -91,7 +92,8 @@ class ConditionalClades {
   void unserialize(const std::string &inputFile);
   void buildFromGeneTrees(const std::string &inputFile, 
       const std::string &likelihoods,
-      CCPRooting);
+      CCPRooting ccpRooting,
+      unsigned int sampleFrequency);
   void buildFromALEFormat(const std::string &inputFile, 
         CCPRooting ccpRooting);
 

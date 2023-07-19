@@ -207,7 +207,8 @@ public:
 
 ScoredBackups DatedSpeciesTreeSearch::optimizeDatesFromReconciliation(SpeciesTree &speciesTree,
       SpeciesTreeLikelihoodEvaluatorInterface &evaluation,
-      unsigned int searches)
+      unsigned int searches,
+      unsigned int toEvaluate)
 {
   auto &tree = speciesTree.getDatedTree();
   ScoredBackups scoredBackups; 
@@ -257,14 +258,23 @@ ScoredBackups DatedSpeciesTreeSearch::optimizeDatesFromReconciliation(SpeciesTre
         //Logger::timed << " better score=" << bestScore  << std::endl;//" ll=" << evaluation.computeLikelihood()<< std::endl;
       }
     }
-    evaluation.onSpeciesDatesChange();
+    scoredBackups.push_back(ScoredBackup(tree, bestScore));
+    
+    Logger::timed << "End of iteration " << i << ", score=" << bestScore 
+      << std::endl;
+    //  << " ll=" << ll << std::endl;
+  } 
+  std::sort(scoredBackups.rbegin(), scoredBackups.rend());
+  scoredBackups.resize(std::min<size_t>(scoredBackups.size(), toEvaluate));
+  for (auto &sb: scoredBackups) {
     // now we compute the "real likelihood" (not the transfer score)
     // and map it to this dating
+    speciesTree.getDatedTree().restore(sb.backup);
+    evaluation.onSpeciesDatesChange();
     auto ll = evaluation.computeLikelihood();
-    scoredBackups.push_back(ScoredBackup(tree, ll));
-    Logger::timed << "End of iteration " << i << ", score=" << bestScore 
-      << " ll=" << ll << std::endl;
-  } 
+    Logger::info << "Score=" << sb.score << " ll=" << ll << std::endl;
+    sb.score = ll;
+  }
   std::sort(scoredBackups.rbegin(), scoredBackups.rend());
   // reset the tree to its initial dating
   tree.restore(reconciliationDatingBackup);

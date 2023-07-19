@@ -1,5 +1,6 @@
 #include "util/Scenario.hpp"
 #include <IO/Logger.hpp>
+#include <IO/FileSystem.hpp>
 #include <IO/ReconciliationWriter.hpp>
 #include <IO/ParallelOfstream.hpp>
 #include <vector>
@@ -349,15 +350,63 @@ void Scenario::saveReconciliation(ParallelOfstream &os, ReconciliationFormat for
 void Scenario::countTransfers(const StringToUint &labelToId,
       MatrixUint &count)
 {
-
+  char *labelFrom = nullptr;
+  char *labelTo = nullptr;
+  unsigned int from = 0;
+  unsigned int to = 0;
   for (auto &event: _events) {
-    if (event.type == ReconciliationEventType::EVENT_T 
-        || event.type == ReconciliationEventType::EVENT_TL) {
-      auto labelFrom = _speciesTree->nodes[event.speciesNode]->label;
-      auto labelTo = _speciesTree->nodes[event.destSpeciesNode]->label;
-      auto from = labelToId.at(std::string(labelFrom));
-      auto to = labelToId.at(std::string(labelTo));
+    switch(event.type) {
+    case ReconciliationEventType::EVENT_T:
+    case ReconciliationEventType::EVENT_TL:
+      labelFrom = _speciesTree->nodes[event.speciesNode]->label;
+      labelTo = _speciesTree->nodes[event.destSpeciesNode]->label;
+      from = labelToId.at(std::string(labelFrom));
+      to = labelToId.at(std::string(labelTo));
       count[from][to]++;
+      break;
+    case ReconciliationEventType::EVENT_S:
+    case ReconciliationEventType::EVENT_SL:
+    case ReconciliationEventType::EVENT_L:
+    case ReconciliationEventType::EVENT_D:
+    case ReconciliationEventType::EVENT_None:
+    case ReconciliationEventType::EVENT_Invalid:
+      break;
+    }
+  }
+}
+
+void Scenario::countOrigins(const StringToUint &labelToId,
+      MatrixUint &count)
+{
+  // origins come from SL, S, T, and TL events
+  countTransfers(labelToId, count);
+  char *originLabel = nullptr;
+  char *destLabel1 = nullptr;
+  char *destLabel2 = nullptr;
+  unsigned int origin = 0;
+  for (auto &event: _events) {
+    switch(event.type) {
+    case ReconciliationEventType::EVENT_S:
+      originLabel = _speciesTree->nodes[event.speciesNode]->label;
+      origin = labelToId.at(originLabel);
+      destLabel1 = _speciesTree->nodes[event.speciesNode]->left->label;
+      destLabel2 = _speciesTree->nodes[event.speciesNode]->right->label;
+      count[origin][labelToId.at(destLabel1)]++;
+      count[origin][labelToId.at(destLabel2)]++;
+      break;
+    case ReconciliationEventType::EVENT_SL:
+      originLabel = _speciesTree->nodes[event.speciesNode]->label;
+      origin = labelToId.at(originLabel);
+      destLabel1 = event.pllDestSpeciesNode->label; 
+      count[origin][labelToId.at(destLabel1)]++;
+      break;
+    case ReconciliationEventType::EVENT_T:
+    case ReconciliationEventType::EVENT_TL:
+    case ReconciliationEventType::EVENT_L:
+    case ReconciliationEventType::EVENT_D:
+    case ReconciliationEventType::EVENT_None:
+    case ReconciliationEventType::EVENT_Invalid:
+      break;
     }
   }
 }
@@ -372,6 +421,8 @@ void Scenario::saveTransfers(const std::string &filename, bool masterRankOnly)
     }
   }
 }
+  
+
   
 void Scenario::saveLargestOrthoGroup(std::string &filename, bool masterRankOnly) const
 {
@@ -453,6 +504,44 @@ void Scenario::saveTransferPairCountGlobal(PLLRootedTree &speciesTree,
       << " " << idToLabel[p.id2] 
       << " " << p.count 
       << std::endl;
+  }
+}
+
+
+void Scenario::saveOriginsGlobal(PLLRootedTree &speciesTree,
+    std::vector< std::shared_ptr<Scenario> > &scenarios,
+    unsigned int samples,
+    const std::string &outputDir)
+{
+  const auto labelToId = speciesTree.getDeterministicLabelToId();
+  const auto idToLabel = speciesTree.getDeterministicIdToLabel();
+  const unsigned int N = labelToId.size();
+  const VectorUint zeros(N, 0);
+  auto countMatrix = MatrixUint(N, zeros);
+  for (auto &scenario: scenarios) {
+    scenario->countOrigins(labelToId, countMatrix);
+  }
+  // iterate over all dest species, and compute their origins
+  for (unsigned int j = 0; j < N; ++j) {
+    // will stor the origins
+    std::vector<TransferPair> transferPairs;
+    auto label = idToLabel[j];
+    auto output = FileSystem::joinPaths(outputDir, label + ".txt");
+    // iterate over all origins
+    for (unsigned int i = 0; i < N; ++i) {
+      ParallelContext::sumUInt(countMatrix[i][j]);
+      if (countMatrix[i][j]) { 
+        TransferPair p(countMatrix[i][j], i, j);
+        transferPairs.push_back(p);
+      }
+    }
+    std::sort(transferPairs.rbegin(), transferPairs.rend());
+    ParallelOfstream os(output);
+    for (auto p: transferPairs) {
+      os << idToLabel[p.id1] 
+        << ", " << double(p.count) / double(samples)
+        << std::endl;
+    }
   }
 }
 

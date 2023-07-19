@@ -153,9 +153,16 @@ public:
 
   void saveReconciliation(const std::string &filename, ReconciliationFormat format, bool masterRankOnly = true);
   void saveReconciliation(ParallelOfstream &os, ReconciliationFormat format);
+  
   static void saveTransferPairCountGlobal(PLLRootedTree &speciesTree,
       std::vector< std::shared_ptr<Scenario> > &scenarios,
       const std::string &filename);
+  
+  static void saveOriginsGlobal(PLLRootedTree &speciesTree,
+      std::vector< std::shared_ptr<Scenario> > &scenarios,
+      unsigned int samples,
+      const std::string &filename);
+
 
   void saveLargestOrthoGroup(std::string &filename, bool masterRankOnly = true) const;
   void saveAllOrthoGroups(std::string &filename, bool masterRankOnly = true) const;
@@ -167,6 +174,8 @@ public:
       bool normalize);
   void gatherReconciliationStatistics(PerSpeciesEvents &perSpeciesEvents) const;
   void countTransfers(const StringToUint &labelToId,
+      MatrixUint &count);
+  void countOrigins(const StringToUint &labelToId,
       MatrixUint &count);
   
   std::vector<unsigned int> getPerSpeciesCopies() const;

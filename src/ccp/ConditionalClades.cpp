@@ -109,15 +109,20 @@ static void readTrees(const std::string &inputFile,
     bool rooted,
     WeightedTrees &weightedTrees,
     unsigned int &inputTrees,
-    unsigned int &uniqueInputTrees)
+    unsigned int &uniqueInputTrees,
+    unsigned int sampleFrequency)
 {
   std::ifstream infile(inputFile);
   std::string line;
   bool useLikelihoods = likelihoodFile.size() != 0;
   std::vector<std::string> lines;
   std::vector<double> likelihoods;
+  unsigned int index = 0;
   while (std::getline(infile, line)) {
-    lines.push_back(line);
+    if (index % sampleFrequency == 0) {
+      lines.push_back(line);
+    }
+    index++;
   }
   if (useLikelihoods) {
     std::ifstream llFile(likelihoodFile);
@@ -303,7 +308,8 @@ static void fillCladeCounts(const WeightedTrees &weightedTrees,
 
 ConditionalClades::ConditionalClades(const std::string &inputFile,
     const std::string &likelihoods,
-      CCPRooting ccpRooting):
+      CCPRooting ccpRooting,
+      unsigned int sampleFrequency):
   _inputTrees(0),
   _uniqueInputTrees(0),
   _ccpRooting(ccpRooting)
@@ -319,7 +325,7 @@ ConditionalClades::ConditionalClades(const std::string &inputFile,
       // try reading the file as a list of gene trees
     }
   }
-  buildFromGeneTrees(inputFile, likelihoods, ccpRooting);
+  buildFromGeneTrees(inputFile, likelihoods, ccpRooting, sampleFrequency);
 }
 
 static CID getCIDFromALE(size_t readCID)
@@ -468,7 +474,8 @@ void ConditionalClades::buildFromALEFormat(const std::string &inputFile,
 
 void ConditionalClades::buildFromGeneTrees(const std::string &inputFile,
     const std::string &likelihoods,
-    CCPRooting ccpRooting)
+    CCPRooting ccpRooting,
+    unsigned int sampleFrequency)
 {
   std::unordered_map<std::string, unsigned int> leafToId;
   CCPClade emptyClade;
@@ -479,7 +486,8 @@ void ConditionalClades::buildFromGeneTrees(const std::string &inputFile,
       (ccpRooting == CCPRooting::ROOTED),
       weightedTrees, 
       _inputTrees, 
-      _uniqueInputTrees); 
+      _uniqueInputTrees,
+      sampleFrequency); 
   auto &anyTree = *(weightedTrees.begin()->first.tree);
   for (auto leaf: anyTree.getLabels()) {
     leafToId.insert({leaf, leafToId.size()});

@@ -19,16 +19,15 @@ static bool lineSearchParameters(FunctionToOptimize &function,
     Parameters &currentRates, 
     const Parameters &gradient, 
     unsigned int &llComputationsLine,
-    const OptimizationSettings &settings
+    OptimizationSettings &settings
     )
 {
-   
   double alpha = 0.1; 
   const double minAlpha = settings.minAlpha;
   Parameters currentGradient(gradient);
   bool noImprovement = true;
   if (settings.verbose) {
-    Logger::info << "lineSearch " << currentRates.getScore() <<  " gradient: " << gradient << std::endl;
+    Logger::info << "lineSearch from ll=" << currentRates.getScore()  << std::endl;
   }
   //Logger::info << "minimprov " << settings.lineSearchMinImprovement <<  std::endl; 
   while (alpha > minAlpha) {
@@ -45,6 +44,9 @@ static bool lineSearchParameters(FunctionToOptimize &function,
       noImprovement = false;
       alpha *= 1.5;
     } else {
+      if (settings.verbose) {
+        Logger::info << "No improv alpha=" << alpha << " score=" << proposal.getScore() << " p=" << proposal << std::endl;
+      }
       alpha *= 0.5;
       //Logger::info << std::setprecision(15) << "No improv alpha=" << alpha << " score_to_beat=" << currentRates.getScore() << " p=" << proposal  << std::endl;
       if (!noImprovement) {
