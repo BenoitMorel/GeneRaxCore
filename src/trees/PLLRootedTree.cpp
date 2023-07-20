@@ -849,3 +849,11 @@ std::unordered_map<std::string, corax_rnode_t *> PLLRootedTree::getLabelToNode(b
   return res;
 }
 
+std::string PLLRootedTree::buildConsensusTree(
+    std::vector<std::string> &strOrFiles, 
+      double threshold)
+{
+  
+
+
+}

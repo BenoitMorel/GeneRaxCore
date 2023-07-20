@@ -58,8 +58,18 @@ public:
   /**
    *  Build a consensus tree from a list of strings representing
    *  either a newick file or a newick string.
+   *  Return a newick string
    */
   static std::string buildConsensusTree(std::vector<std::string> &strOrFiles, 
+      double threshold = 0.51);
+  /**
+   *  Build a consensus tree from a list of tree pointers. 
+   *  WARNING: this function reindexes the input tree leaves
+   *  such that all leaves with the same label have the same index
+   *  Return a newick string
+   */
+  static std::string buildConsensusTree(
+      const std::vector<std::shared_ptr<PLLUnrootedTree> > &trees,
       double threshold = 0.51);
 
   /**

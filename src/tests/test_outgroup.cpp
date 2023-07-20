@@ -13,7 +13,6 @@ int main()
  
   auto outgroup = unrooted2->findLeaf("outgroup");
   auto rooted2 = PLLRootedTree::buildFromOutgroup(outgroup);
-  Logger::info << rooted2->getNewickString() << std::endl;
   assert(rooted2 && *rooted2 == rooted1);
   return 0;
 }

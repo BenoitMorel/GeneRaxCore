@@ -76,4 +76,6 @@ endmacro()
 
 
 add_program_corax(test_outgroup "test_outgroup.cpp")
+add_program_corax(test_consensus "test_consensus.cpp")
+add_program_corax(test_isotrees "test_isotrees.cpp")
 

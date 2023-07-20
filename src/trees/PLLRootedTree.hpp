@@ -200,6 +200,13 @@ public:
   std::vector<std::string> getDeterministicIdToLabel() const;
 
   /**
+   *  Build a consensus tree from a list of strings representing
+   *  either a newick file or a newick string.
+   */
+  static std::string buildConsensusTree(std::vector<std::string> &strOrFiles, 
+      double threshold = 0.51);
+  
+  /**
    *  Return a mapping from the nodes IDs of this tree
    *  and the input tree. Both trees must have the same
    *  leaf labels and topology.
