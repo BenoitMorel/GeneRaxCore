@@ -65,9 +65,8 @@ set(generaxcore_SOURCES
   )
 
 add_library(generaxcore STATIC ${generaxcore_SOURCES})
-
+add_subdirectory(tests)
 target_include_directories(generaxcore
   PUBLIC ${GENERAXCORE_INCLUDE_DIRS}
   )
-
 

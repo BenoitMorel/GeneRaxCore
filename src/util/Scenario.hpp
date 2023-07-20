@@ -176,6 +176,8 @@ public:
   void countTransfers(const StringToUint &labelToId,
       MatrixUint &count);
   void countOrigins(const StringToUint &labelToId,
+    std::vector<unsigned int> &fromS,
+    std::vector<unsigned int> &fromSButL,
       MatrixUint &count);
   
   std::vector<unsigned int> getPerSpeciesCopies() const;

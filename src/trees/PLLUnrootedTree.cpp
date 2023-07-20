@@ -89,6 +89,18 @@ std::unique_ptr<PLLUnrootedTree> PLLUnrootedTree::buildFromStrOrFile(const std::
   }
   return res;
 }
+  
+std::unique_ptr<PLLUnrootedTree> 
+PLLUnrootedTree::buildWithOutgroupFromRooted(
+    const PLLRootedTree &rootedTree, const std::string &outgroup)
+{
+  std::string left = rootedTree.getNewickString();
+  auto begin = left.find_first_of('(') + 1;
+  auto end = left.find_last_of(')') - 1;
+  left = left.substr(begin, end); 
+  std::string newick = std::string("(") + left + "," + outgroup + ");";
+  return std::make_unique<PLLUnrootedTree>(newick, false);
+}
 
 char *consensus_serialize(const corax_unode_t *node)
 {
@@ -818,6 +830,12 @@ size_t PLLUnrootedTree::getRootedTreeHash(corax_unode_t *root) const
 
 
 
+/**
+ *  Recursively fill the vector leftFirst, that indicates
+ *  whether we should traverse the left node or the right node
+ *  first when traversing the tree top down with an order based
+ *  on the tip labels (used in areIsomorphicAux)
+ */
 static const char *orderChildren(corax_unode_t *node,
     std::vector<bool> &leftFirst)
 {
@@ -835,6 +853,11 @@ static const char *orderChildren(corax_unode_t *node,
   }
 }
 
+/**
+ *  returns true if the nodes node1 and node2 are isomorphic
+ *  leftFirst1 and leftFirst2 must have been filled with
+ *  the orderChildren function
+ */
 static bool areIsomorphicAux(corax_unode_t *node1,
     corax_unode_t *node2,
     const std::vector<bool> &leftFirst1,

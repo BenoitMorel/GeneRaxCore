@@ -376,29 +376,28 @@ void Scenario::countTransfers(const StringToUint &labelToId,
 }
 
 void Scenario::countOrigins(const StringToUint &labelToId,
-      MatrixUint &count)
+    std::vector<unsigned int> &fromS,
+    std::vector<unsigned int> &fromSButL,
+    MatrixUint &count)
 {
   // origins come from SL, S, T, and TL events
   countTransfers(labelToId, count);
-  char *originLabel = nullptr;
   char *destLabel1 = nullptr;
   char *destLabel2 = nullptr;
-  unsigned int origin = 0;
   for (auto &event: _events) {
     switch(event.type) {
     case ReconciliationEventType::EVENT_S:
-      originLabel = _speciesTree->nodes[event.speciesNode]->label;
-      origin = labelToId.at(originLabel);
       destLabel1 = _speciesTree->nodes[event.speciesNode]->left->label;
       destLabel2 = _speciesTree->nodes[event.speciesNode]->right->label;
-      count[origin][labelToId.at(destLabel1)]++;
-      count[origin][labelToId.at(destLabel2)]++;
+      fromS[labelToId.at(destLabel1)]++;
+      fromS[labelToId.at(destLabel2)]++;
       break;
     case ReconciliationEventType::EVENT_SL:
-      originLabel = _speciesTree->nodes[event.speciesNode]->label;
-      origin = labelToId.at(originLabel);
       destLabel1 = event.pllDestSpeciesNode->label; 
-      count[origin][labelToId.at(destLabel1)]++;
+      destLabel2 = event.pllLostSpeciesNode->label; 
+      assert(destLabel1 != destLabel2);
+      fromS[labelToId.at(destLabel1)]++;
+      fromSButL[labelToId.at(destLabel2)]++;
       break;
     case ReconciliationEventType::EVENT_T:
     case ReconciliationEventType::EVENT_TL:
@@ -518,8 +517,10 @@ void Scenario::saveOriginsGlobal(PLLRootedTree &speciesTree,
   const unsigned int N = labelToId.size();
   const VectorUint zeros(N, 0);
   auto countMatrix = MatrixUint(N, zeros);
+  std::vector<unsigned int> fromS(N, 0);
+  std::vector<unsigned int> fromSButL(N, 0);
   for (auto &scenario: scenarios) {
-    scenario->countOrigins(labelToId, countMatrix);
+    scenario->countOrigins(labelToId, fromS, fromSButL, countMatrix);
   }
   // iterate over all dest species, and compute their origins
   for (unsigned int j = 0; j < N; ++j) {
@@ -527,6 +528,8 @@ void Scenario::saveOriginsGlobal(PLLRootedTree &speciesTree,
     std::vector<TransferPair> transferPairs;
     auto label = idToLabel[j];
     auto output = FileSystem::joinPaths(outputDir, label + ".txt");
+    ParallelContext::sumUInt(fromS[j]);
+    ParallelContext::sumUInt(fromSButL[j]);
     // iterate over all origins
     for (unsigned int i = 0; i < N; ++i) {
       ParallelContext::sumUInt(countMatrix[i][j]);
@@ -537,6 +540,8 @@ void Scenario::saveOriginsGlobal(PLLRootedTree &speciesTree,
     }
     std::sort(transferPairs.rbegin(), transferPairs.rend());
     ParallelOfstream os(output);
+    os << "from_parent_surviving, " << double(fromS[j]) / double(samples) << std::endl;
+    os << "from_parent_exctinct, " << double(fromSButL[j]) / double(samples) << std::endl;
     for (auto p: transferPairs) {
       os << idToLabel[p.id1] 
         << ", " << double(p.count) / double(samples)

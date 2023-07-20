@@ -63,6 +63,11 @@ public:
   PLLRootedTree(const std::unordered_set<std::string> &labels);
 
   static std::unique_ptr<PLLRootedTree> buildFromStrOrFile(const std::string &strOrFile);
+
+  /**
+   *  Construct a rooted tree from outgroup->back
+   */
+  static std::unique_ptr<PLLRootedTree> buildFromOutgroup(corax_unode_t *outgroup);  
   
   /**
    * Forbid copy
@@ -88,6 +93,19 @@ public:
   corax_rnode_t *getNode(unsigned int node_index) const;
   corax_rnode_t *getParent(unsigned int node_index) const;
   corax_rnode_t *getNeighbor(unsigned int node_index) const;
+ 
+
+  /**
+   *  Tree comparison
+   */
+  static bool areIsomorphic(const PLLRootedTree &t1,
+    const PLLRootedTree &t2);
+
+  bool operator ==(const PLLRootedTree &other) const
+  {
+    return areIsomorphic(*this, other);
+  }
+  
 
   /**
    * labels

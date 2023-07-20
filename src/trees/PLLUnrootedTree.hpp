@@ -35,9 +35,30 @@ public:
   PLLUnrootedTree(const std::string &str, bool isFile = true);
 
 
+  /**
+   *  Construct an unrooted tree from a rooted tree (we simply
+   *  unroot it)
+   */
   PLLUnrootedTree(PLLRootedTree &rootedTree);
 
+  /**
+   *  Construct a tree from either a path to a newick file 
+   *  or a newick string
+   *  We first try to open it as a file path, and if it fails, as
+   *  a newick string
+   */
   static std::unique_ptr<PLLUnrootedTree> buildFromStrOrFile(const std::string &strOrFile);
+  
+  /**
+   *  Construct an unrooted tree from a rooted tree, and add an
+   *  outgroup node (with label outgroup) at the branch of the root
+   */
+  static std::unique_ptr<PLLUnrootedTree> buildWithOutgroupFromRooted(const PLLRootedTree &rootedTree, const std::string &outgroup);
+ 
+  /**
+   *  Build a consensus tree from a list of strings representing
+   *  either a newick file or a newick string.
+   */
   static std::string buildConsensusTree(std::vector<std::string> &strOrFiles, 
       double threshold = 0.51);
 

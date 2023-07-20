@@ -6,6 +6,7 @@
 #include <maths/Random.hpp>
 #include <parallelization/ParallelContext.hpp>
 #include <sstream>
+#include <trees/PLLUnrootedTree.hpp>
 
 static void * xmalloc(size_t size)
 { 
@@ -117,6 +118,72 @@ static unsigned int utree_count_nodes_recursive(corax_unode_t * node,
   }
 }
 
+/**
+ *  Recursively fill the vector leftFirst, that indicates
+ *  whether we should traverse the left node or the right node
+ *  first when traversing the tree top down with an order based
+ *  on the tip labels (used in areIsomorphicAux)
+ */
+static const char *orderChildren(corax_rnode_t *node,
+    std::vector<bool> &leftFirst)
+{
+  if (!node->left) {
+    return node->label;
+  }
+  const char *label1 = orderChildren(node->left, leftFirst);
+  const char *label2 = orderChildren(node->right, leftFirst);
+  if (strcmp(label1, label2) < 0) {
+    leftFirst[node->node_index] = true;
+    return label1;
+  } else {
+    leftFirst[node->node_index] = false;
+    return label2;
+  }
+}
+
+/**
+ *  returns true if the nodes node1 and node2 are isomorphic
+ *  leftFirst1 and leftFirst2 must have been filled with
+ *  the orderChildren function
+ */
+static bool areIsomorphicAux(corax_rnode_t *node1,
+    corax_rnode_t *node2,
+    const std::vector<bool> &leftFirst1,
+    const std::vector<bool> &leftFirst2)
+{
+  if (!node1->left || !node2->left) {
+    // at least one is a leaf
+    if (node1->left || node2->left) {
+      // only one is a leaf 
+      return false;
+    }
+    return strcmp(node1->label, node2->label) == 0;
+  }
+  // both are internal nodes
+  auto l1 = node1->left;
+  auto r1 = node1->right;
+  auto l2 = node2->left;
+  auto r2 = node2->right;
+  if (!leftFirst1[node1->node_index]) {
+    std::swap(l1, r1);
+  }
+  if (!leftFirst2[node2->node_index]) {
+    std::swap(l2, r2);
+  }
+  return areIsomorphicAux(l1, l2, leftFirst1, leftFirst2) 
+    && areIsomorphicAux(r1, r2, leftFirst1, leftFirst2);
+}
+
+bool PLLRootedTree::areIsomorphic(const PLLRootedTree &t1,
+    const PLLRootedTree &t2)
+{
+  if (t1.getNodeNumber() != t2.getNodeNumber()) {
+    return false;
+  }
+  return true;
+}
+
+
 void PLLRootedTree::setSon(corax_rnode_t *parent, corax_rnode_t *newSon, bool left)
 {
   newSon->parent = parent;
@@ -190,6 +257,17 @@ std::unique_ptr<PLLRootedTree> PLLRootedTree::buildFromStrOrFile(const std::stri
   }
   return res;
 }
+  
+std::unique_ptr<PLLRootedTree> PLLRootedTree::buildFromOutgroup(corax_unode_t *outgroup)
+{
+  auto rootedNewick = std::string("(");
+  auto temp = PLLUnrootedTree::getSubtreeString(outgroup->back);
+  auto begin = temp.find_first_of('(') + 1;
+  auto end = temp.find_last_of(')') - 1;
+  rootedNewick += temp.substr(begin, end);
+  rootedNewick += ");";
+  return std::make_unique<PLLRootedTree>(rootedNewick, false);
+}
 
 void PLLRootedTree::save(const std::string &fileName) const
 {
@@ -204,6 +282,7 @@ std::string PLLRootedTree::getNewickString() const
   return newick;
 }
   
+
 void PLLRootedTree::setMissingBranchLengths(double minBL)
 {
   for (auto node: getNodes()) {
