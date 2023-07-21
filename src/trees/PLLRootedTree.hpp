@@ -68,6 +68,7 @@ public:
    *  Construct a rooted tree from outgroup->back
    */
   static std::unique_ptr<PLLRootedTree> buildFromOutgroup(corax_unode_t *outgroup);  
+  static std::string getRootedNewickFromOutgroup(corax_unode_t *outgroup);  
   
   /**
    * Forbid copy
@@ -203,7 +204,7 @@ public:
    *  Build a consensus tree from a list of strings representing
    *  either a newick file or a newick string.
    */
-  static std::string buildConsensusTree(std::vector<std::string> &strOrFiles, 
+  static std::string buildConsensusTree(const std::vector<std::string> &strOrFiles, 
       double threshold = 0.51);
   
   /**

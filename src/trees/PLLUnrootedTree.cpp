@@ -90,16 +90,23 @@ std::unique_ptr<PLLUnrootedTree> PLLUnrootedTree::buildFromStrOrFile(const std::
   return res;
 }
   
-std::unique_ptr<PLLUnrootedTree> 
-PLLUnrootedTree::buildWithOutgroupFromRooted(
-    const PLLRootedTree &rootedTree, const std::string &outgroup)
+  
+std::unique_ptr<PLLUnrootedTree> PLLUnrootedTree::buildWithOutgroupFromRootedNewick(const std::string &newickRootedStr, const std::string &outgroup)
 {
-  std::string left = rootedTree.getNewickString();
+  std::string left = newickRootedStr;
   auto begin = left.find_first_of('(') + 1;
   auto end = left.find_last_of(')') - 1;
   left = left.substr(begin, end); 
   std::string newick = std::string("(") + left + "," + outgroup + ");";
   return std::make_unique<PLLUnrootedTree>(newick, false);
+}
+ 
+std::unique_ptr<PLLUnrootedTree> 
+PLLUnrootedTree::buildWithOutgroupFromRooted(
+    const PLLRootedTree &rootedTree, const std::string &outgroup)
+{
+  return buildWithOutgroupFromRootedNewick(rootedTree.getNewickString(),
+      outgroup);
 }
 
 char *consensus_serialize(const corax_unode_t *node)
@@ -792,18 +799,19 @@ static corax_unode_t *findMinimumHashLeafRec(corax_unode_t * root, size_t &hashV
     hashValue = leafHash(root);
     return root;
   }
-  auto n1 = root->next->back;
-  auto n2 = root->next->next->back;
   size_t hash1, hash2;
-  auto min1 = findMinimumHashLeafRec(n1, hash1);
-  auto min2 = findMinimumHashLeafRec(n2, hash2);
-  if (hash1 < hash2) {
-    hashValue = hash1;
-    return min1;
-  } else {
-    hashValue = hash2;
-    return min2;
+  auto temp = root->next;
+  auto min1 = findMinimumHashLeafRec(temp->back, hash1);
+  while (temp != root) {
+    auto min2 = findMinimumHashLeafRec(temp->back, hash2);
+    if (hash2 < hash1) {
+      hash1 = hash2;
+      min1 = min2;
+    }
+    temp = temp->next;
   }
+  hashValue = hash1;
+  return min1;
 }
 
 static corax_unode_t *findMinimumHashLeaf(corax_unode_t * root) 
@@ -838,10 +846,9 @@ size_t PLLUnrootedTree::getRootedTreeHash(corax_unode_t *root) const
 
 
 /**
- *  Recursively fill the vector leftFirst, that indicates
- *  whether we should traverse the left node or the right node
- *  first when traversing the tree top down with an order based
- *  on the tip labels (used in areIsomorphicAux)
+ *  Recursively fill the vector orderedChildren, such that
+ *  orderedChildren[node->node_index] is the list of the children
+ *  of node ordered by the smallest leaf label under each child.1
  */
 static std::string orderChildren(corax_unode_t *node,
     std::vector<std::vector<corax_unode_t *> > &orderedChildren)

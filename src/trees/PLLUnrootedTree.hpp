@@ -55,6 +55,8 @@ public:
    */
   static std::unique_ptr<PLLUnrootedTree> buildWithOutgroupFromRooted(const PLLRootedTree &rootedTree, const std::string &outgroup);
  
+  static std::unique_ptr<PLLUnrootedTree> buildWithOutgroupFromRootedNewick(const std::string &newickRootedStr, const std::string &outgroup);
+ 
   /**
    *  Build a consensus tree from a list of strings representing
    *  either a newick file or a newick string.

@@ -180,7 +180,10 @@ bool PLLRootedTree::areIsomorphic(const PLLRootedTree &t1,
   if (t1.getNodeNumber() != t2.getNodeNumber()) {
     return false;
   }
-  return true;
+  std::vector<bool> leftFirst1(t1.getNodeNumber(), false);
+  std::vector<bool> leftFirst2(t2.getNodeNumber(), false);
+  return areIsomorphicAux(t1.getRoot(), t2.getRoot(), 
+      leftFirst1, leftFirst2);
 }
 
 
@@ -258,7 +261,8 @@ std::unique_ptr<PLLRootedTree> PLLRootedTree::buildFromStrOrFile(const std::stri
   return res;
 }
   
-std::unique_ptr<PLLRootedTree> PLLRootedTree::buildFromOutgroup(corax_unode_t *outgroup)
+  
+std::string PLLRootedTree::getRootedNewickFromOutgroup(corax_unode_t *outgroup)  
 {
   auto rootedNewick = std::string("(");
   auto temp = PLLUnrootedTree::getSubtreeString(outgroup->back);
@@ -266,9 +270,15 @@ std::unique_ptr<PLLRootedTree> PLLRootedTree::buildFromOutgroup(corax_unode_t *o
   auto end = temp.find_last_of(')') - 1;
   rootedNewick += temp.substr(begin, end);
   rootedNewick += ");";
-  return std::make_unique<PLLRootedTree>(rootedNewick, false);
+  return rootedNewick;
 }
 
+std::unique_ptr<PLLRootedTree> PLLRootedTree::buildFromOutgroup(corax_unode_t *outgroup)
+{
+  auto rootedNewick = getRootedNewickFromOutgroup(outgroup);
+  return std::make_unique<PLLRootedTree>(rootedNewick, false);
+
+}
 void PLLRootedTree::save(const std::string &fileName) const
 {
   LibpllParsers::saveRtree(_tree->root, fileName);
@@ -850,10 +860,24 @@ std::unordered_map<std::string, corax_rnode_t *> PLLRootedTree::getLabelToNode(b
 }
 
 std::string PLLRootedTree::buildConsensusTree(
-    std::vector<std::string> &strOrFiles, 
+    const std::vector<std::string> &strOrFiles, 
       double threshold)
 {
+  const std::string OUTGROUP_LABEL = "alerax_internal_str_for_outgroup";
+  std::vector<std::shared_ptr<PLLUnrootedTree> > outgroupTrees;
+  for (auto &str: strOrFiles) {
+    auto tree = PLLRootedTree::buildFromStrOrFile(str);
+    outgroupTrees.push_back(PLLUnrootedTree::buildWithOutgroupFromRooted(
+        *tree, OUTGROUP_LABEL)); 
+  }
+  // this is the unrooted consensus newick with the outgroup
+  auto consensusStr = PLLUnrootedTree::buildConsensusTree(outgroupTrees,
+      threshold);
+  PLLUnrootedTree consensus(consensusStr, false);
+  // convert it to rooted consensus string
+  auto rootedStr = PLLRootedTree::getRootedNewickFromOutgroup(
+      consensus.findLeaf(OUTGROUP_LABEL));
   
-
+  return rootedStr;
 
 }
