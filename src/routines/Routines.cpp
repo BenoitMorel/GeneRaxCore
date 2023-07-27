@@ -210,6 +210,7 @@ void Routines::inferAndGetReconciliationScenarios(
   // infer the scenarios!
   for (unsigned int i = 0; i  < geneTrees.getTrees().size(); ++i) {
     if (reconciliationSamples < 1) {
+      scenarios.push_back(std::make_shared<Scenario>());
       evaluations[i]->inferMLScenario(*scenarios[i]);
     } else {
       evaluations[i]->sampleReconciliations(reconciliationSamples, scenarios);
