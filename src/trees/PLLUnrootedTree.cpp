@@ -802,6 +802,7 @@ static corax_unode_t *findMinimumHashLeafRec(corax_unode_t * root, size_t &hashV
   size_t hash1, hash2;
   auto temp = root->next;
   auto min1 = findMinimumHashLeafRec(temp->back, hash1);
+  temp = temp->next;
   while (temp != root) {
     auto min2 = findMinimumHashLeafRec(temp->back, hash2);
     if (hash2 < hash1) {
