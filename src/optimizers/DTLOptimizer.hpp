@@ -17,6 +17,7 @@ struct OptimizationSettings {
     lineSearchMinImprovement(0.1),
     optimizationMinImprovement(3.0),
     minAlpha(0.0000001),
+    startingAlpha(0.1),
     epsilon(0.0000001),
     verbose(false)
   {}
@@ -25,6 +26,7 @@ struct OptimizationSettings {
   double lineSearchMinImprovement;
   double optimizationMinImprovement;
   double minAlpha;
+  double startingAlpha;
   double epsilon;
   bool verbose;
 };
