@@ -69,6 +69,7 @@ static corax_utree_t *buildUtree(const std::string &str, bool isFile)
 PLLUnrootedTree::PLLUnrootedTree(const std::string &str, bool isFile):
   _tree(buildUtree(str, isFile), utreeDestroy)
 {
+  setMissingBranchLengths();
 }
 
 PLLUnrootedTree::PLLUnrootedTree(PLLRootedTree &rootedTree):
@@ -200,16 +201,16 @@ void PLLUnrootedTree::save(const std::string &fileName)
 void PLLUnrootedTree::setMissingBranchLengths(double minBL)
 {
   for (auto node: getLeaves()) {
-    if (0.0 == node->length) {
+    if (0.0 >= node->length) {
       node->length = minBL;
     } 
   }
   for (unsigned int i = _tree->tip_count; i < _tree->tip_count + _tree->inner_count; ++i) {
-    if (0.0 == _tree->nodes[i]->length)
+    if (0.0 >= _tree->nodes[i]->length)
       _tree->nodes[i]->length = minBL;
-    if (0.0 == _tree->nodes[i]->next->length)
+    if (0.0 >= _tree->nodes[i]->next->length)
       _tree->nodes[i]->next->length = minBL;
-    if (0.0 == _tree->nodes[i]->next->next->length)
+    if (0.0 >= _tree->nodes[i]->next->next->length)
       _tree->nodes[i]->next->next->length = minBL;
   }  
 }
