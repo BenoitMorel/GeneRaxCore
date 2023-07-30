@@ -136,7 +136,7 @@ public:
   /**
    * Replace null branch lengths with minBL
    */
-  void setMissingBranchLengths(double minBL = 0.1); 
+  void setMissingBranchLengths(double minBL = 0.1);
 
   
   size_t getUnrootedTreeHash() const;
