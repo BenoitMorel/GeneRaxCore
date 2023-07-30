@@ -211,6 +211,7 @@ public:
   const std::vector<std::vector<Event> > &
     getGeneIdToEvents() const {return _geneIdToEvents;}
   corax_rnode_t *getOriginationSpecies() const;
+  static const unsigned int EVENT_TYPE_NUMBER;
 private:
   static const char *eventNames[];
   std::vector<Event> _events;

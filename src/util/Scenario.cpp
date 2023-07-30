@@ -10,6 +10,8 @@
 
 const char *Scenario::eventNames[]  = {"S", "SL", "D", "T", "TL", "L", "Leaf", "Invalid"};
 
+const unsigned int Scenario::EVENT_TYPE_NUMBER = 6;
+
 struct TransferPair {
   double count;
   unsigned int id1;
@@ -128,8 +130,29 @@ void Scenario::gatherReconciliationStatistics(PerSpeciesEvents &perSpeciesEvents
 }
 
 
+static void dumpSpeciesEventCountVector(ParallelOfstream &os,
+    const std::vector<double> &eventCounts,
+    const std::vector<std::string> &indexToLabel)
+{
+  auto N = indexToLabel.size();
+  assert(Scenario::EVENT_TYPE_NUMBER * N == eventCounts.size());
+  for (unsigned int i = 0; i < N; ++i) {
+    bool print = false;
+    for (unsigned int e = 0; e < Scenario::EVENT_TYPE_NUMBER; ++e) {
+      print |= (eventCounts[i * Scenario::EVENT_TYPE_NUMBER + e] > 0.0);
+    }
+    if (print) {
+      os << indexToLabel[i];
+      for (unsigned int e = 0; e < Scenario::EVENT_TYPE_NUMBER; ++e) {
+        os << ", " <<  eventCounts[i * Scenario::EVENT_TYPE_NUMBER + e];
+      }
+      os << "\n";
+    }
+  }
+}
+
 static void dumpSpeciesToEventCount(ParallelOfstream &os,
-    const std::map<std::string, std::vector<double> > &speciesToEventCount)
+    const std::unordered_map<std::string, std::vector<double> > &speciesToEventCount)
 {
   os << "species,_label, speciations, duplications, losses, transfers, presence, origination" << std::endl;
   std::vector<double> defaultCount(6, 0.0);
@@ -150,7 +173,7 @@ static void dumpSpeciesToEventCount(ParallelOfstream &os,
 void Scenario::savePerSpeciesEventsCounts(const std::string &filename, bool masterRankOnly) {
   
   ParallelOfstream os(filename, masterRankOnly);
-  std::map<std::string, std::vector<double> > speciesToEventCount;
+  std::unordered_map<std::string, std::vector<double> > speciesToEventCount;
   std::vector<double> defaultCount(6, 0);
   for (unsigned int e = 0; e < _speciesTree->tip_count + _speciesTree->inner_count; ++e) {
     assert(_speciesTree->nodes[e]->label);
@@ -264,12 +287,15 @@ void Scenario::mergePerSpeciesEventCounts(const PLLRootedTree &speciesTree,
     bool parallel,
     bool normalize)
 {
+  if (parallel)
+  Logger::timed << "a" << std::endl;
   ParallelOfstream os(filename, parallel);
-  std::map<std::string, std::vector<double> > speciesToEventCount;
-  std::vector<double> defaultCount(6, 0.0);
-  for (const auto &label:  speciesTree.getLabels(false)) {
-    speciesToEventCount.insert({label, defaultCount});
-  }
+  auto speciesLabelToIndex = speciesTree.getDeterministicLabelToId();
+  auto speciesIndexToLabel = speciesTree.getDeterministicIdToLabel();
+  auto N = speciesLabelToIndex.size();
+  std::vector<double> eventCounts(EVENT_TYPE_NUMBER * N, 0.0); 
+  if (parallel)
+  Logger::timed << "b " << filenames.size() << std::endl;
   for (const auto &subfile: filenames) {
     std::ifstream is(subfile);
     std::string line;
@@ -282,37 +308,38 @@ void Scenario::mergePerSpeciesEventCounts(const PLLRootedTree &speciesTree,
       std::string species;
       iss >> species;
       species.pop_back(); // remove comma
-      auto iter = speciesToEventCount.find(species);
-      if (iter == speciesToEventCount.end()) {
-        std::cerr << "Can't find " << species << " in mergePerSpeciesEventCounts when merging file " << filename << std::endl;
-      }
-      for (unsigned int i = 0; i < 6; ++i) {
+      auto speciesIndex = speciesLabelToIndex[species];
+      auto begin = speciesIndex * EVENT_TYPE_NUMBER;
+      for (unsigned int i = begin; i < begin + EVENT_TYPE_NUMBER; ++i) {
         double temp;
         iss >> temp;
         std::string comma;
         iss >> comma;
-        iter->second[i] += temp;
+        eventCounts[i] += temp;
       }
     }
   }
   unsigned int subfileCount = filenames.size(); 
+  if (parallel)
+  Logger::timed << "c " << std::endl;
   if (parallel) {
     if (normalize) {
       ParallelContext::sumUInt(subfileCount);
     }
-    for (const auto &pair: speciesToEventCount) {
-      const auto &species = pair.first;
-      ParallelContext::sumVectorDouble(speciesToEventCount[species]);
-    }
+    ParallelContext::sumVectorDouble(eventCounts);
   }
+  if (parallel)
+  Logger::timed << "e " << std::endl;
   if (normalize) {
-    for (const auto &pair: speciesToEventCount) {
-      for (auto &count: speciesToEventCount[pair.first]) {
-        count /= static_cast<double>(subfileCount);
-      }
+    for (auto &count: eventCounts) {
+      count /= static_cast<double>(subfileCount);
     }
   }
-  dumpSpeciesToEventCount(os, speciesToEventCount);
+  if (parallel)
+  Logger::timed << "f " << std::endl;
+  dumpSpeciesEventCountVector(os, eventCounts, speciesIndexToLabel);
+  if (parallel)
+  Logger::timed << "g " << std::endl;
 }
 
 void Scenario::saveReconciliation(const std::string &filename, ReconciliationFormat format, bool masterRankOnly)
