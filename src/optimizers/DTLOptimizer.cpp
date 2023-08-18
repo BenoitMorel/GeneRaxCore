@@ -22,34 +22,37 @@ static bool lineSearchParameters(FunctionToOptimize &function,
     OptimizationSettings &settings
     )
 {
+  // alpha controls the current size step
   double alpha = settings.startingAlpha; 
+  // we stop the search when alpha < minAlpha
   const double minAlpha = settings.minAlpha;
-  Parameters currentGradient(gradient);
   bool noImprovement = true;
   if (settings.verbose) {
     Logger::info << "lineSearch from ll=" << currentRates.getScore()  << std::endl;
   }
-  //Logger::info << "minimprov " << settings.lineSearchMinImprovement <<  std::endl; 
   while (alpha > minAlpha) {
-    currentGradient.normalize(alpha);
-    Parameters proposal = currentRates + (currentGradient * alpha);
+    Parameters normalizedGradient(gradient);
+    normalizedGradient.normalize(alpha);
+    Parameters proposal = currentRates + (normalizedGradient * alpha);
     function.evaluate(proposal);
     llComputationsLine++;
-    if (currentRates.getScore() + settings.lineSearchMinImprovement
-        < proposal.getScore()) {
+    auto improvement = proposal.getScore() - currentRates.getScore();
+    if (improvement > 0) {
       if (settings.verbose) {
         Logger::info << "Improv alpha=" << alpha << " score=" << proposal.getScore() << " p=" << proposal << std::endl;
       }      
       currentRates = proposal;
-      noImprovement = false;
       alpha *= 1.5;
+      if (improvement > settings.lineSearchMinImprovement) {
+        noImprovement = false;
+      }
     } else {
       if (settings.verbose) {
         Logger::info << "No improv alpha=" << alpha << " score=" << proposal.getScore() << " p=" << proposal << std::endl;
       }
       alpha *= 0.5;
-      //Logger::info << std::setprecision(15) << "No improv alpha=" << alpha << " score_to_beat=" << currentRates.getScore() << " p=" << proposal  << std::endl;
-      if (!noImprovement) {
+      if (!noImprovement && proposal.dimensions() > 1) {
+        // it's time to recompute the gradient, unless we only have one dimension
         return true;
       }
     }
@@ -76,18 +79,20 @@ Parameters optimizeParametersGradient(FunctionToOptimize &function,
   if (settings.verbose) {
     Logger::info << "Computing gradient..." << std::endl;
   }
-  do {
+  bool stop = false;
+  while (!stop) {
     std::vector<Parameters> closeRates(dimensions, currentRates);
     for (unsigned int i = 0; i < dimensions; ++i) {
       Parameters closeRates = currentRates;
       closeRates[i] += epsilon;
-      //Logger::info << "Close rates: " << closeRates << std::endl;
       function.evaluate(closeRates);
       llComputationsGrad++;
       gradient[i] = (currentRates.getScore() - closeRates.getScore()) / (-epsilon);
-      //Logger::info << " GRAD: currll=" << currentRates.getScore() << " newll=" << closeRates.getScore() << " diff=" << currentRates.getScore() - closeRates.getScore() << " grad[i]=" << gradient[i] << " epsilon=" << epsilon  << std::endl;
     }
-  } while (lineSearchParameters(function, currentRates, gradient, llComputationsLine, settings));
+    double oldScore = currentRates.getScore();
+    stop |= !lineSearchParameters(function, currentRates, gradient, llComputationsLine, settings);
+    stop |= (currentRates.getScore() - oldScore) < settings.optimizationMinImprovement;
+  }
   function.evaluate(currentRates);
   return currentRates;
 }
