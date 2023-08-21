@@ -62,6 +62,7 @@ set(generaxcore_SOURCES
   trees/JointTree.cpp
   trees/SpeciesTree.cpp
   util/Scenario.cpp
+  util/GeneRaxCheckpoint.cpp
   )
 
 add_library(generaxcore STATIC ${generaxcore_SOURCES})

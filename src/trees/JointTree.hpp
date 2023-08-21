@@ -7,6 +7,7 @@
 #include <IO/GeneSpeciesMapping.hpp>
 #include <maths/Parameters.hpp>
 #include <util/enums.hpp>
+#include <util/GeneRaxCheckpoint.hpp>
 #include <sstream>
 #include <stack>
 #include <trees/PLLRootedTree.hpp>
@@ -15,6 +16,7 @@
 struct RecModelInfo;
 void printLibpllNode(corax_unode_s *node, std::ostream &os, bool isRoot);
 void printLibpllTreeRooted(corax_unode_t *root, std::ostream &os);
+
 
 class JointTree {
 public:
@@ -30,7 +32,8 @@ public:
               double recWeight,
               bool safeMode,
               bool optimizeDTLRates,
-              const Parameters &ratesVector);
+              const Parameters &ratesVector,
+              const std::string &checkpointPath);
     JointTree(const JointTree &) = delete;
     JointTree & operator = (const JointTree &) = delete;
     JointTree(JointTree &&) = delete;
@@ -80,7 +83,10 @@ public:
      *  This might be constrained by the enforced gene root for instance
      */
     bool canSPRCrossBranch(const corax_unode_t *branch) const;
+    void saveCheckpoint();
+    const GeneRaxCheckpoint &getCheckpoint() const {return _checkpoint;}
 private:
+    GeneRaxCheckpoint _checkpoint;
     LibpllEvaluation _libpllEvaluation;
     std::shared_ptr<ReconciliationEvaluation> reconciliationEvaluation_;
     PLLRootedTree _speciesTree;
