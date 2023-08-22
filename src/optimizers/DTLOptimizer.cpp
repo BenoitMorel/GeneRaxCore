@@ -152,7 +152,6 @@ Parameters optimizeParametersGradient(FunctionToOptimize &function,
     double oldScore = currentRates.getScore();
     stop |= !lineSearchParameters(function, currentRates, gradient, llComputationsLine, settings);
     stop |= (currentRates.getScore() - oldScore) < settings.optimizationMinImprovement;
-    Logger::info << "after lineSearch " << currentRates << std::endl;
   }
   function.evaluate(currentRates);
   return currentRates;
