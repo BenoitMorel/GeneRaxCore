@@ -8,6 +8,7 @@
 #include <likelihoods/ReconciliationEvaluation.hpp>
 #include <iostream>
 #include <cmath>
+#include <corax/optimize/opt_generic.h>
 
 static bool isValidLikelihood(double ll) {
   return std::isnormal(ll) && ll < -0.0000001;
@@ -61,6 +62,65 @@ static bool lineSearchParameters(FunctionToOptimize &function,
 }
 
 
+
+struct TargetParam {
+    FunctionToOptimize *function;
+    unsigned int n;
+};
+
+
+double myTargetFunction(void *function, double *value)
+{
+  auto targetParam = (TargetParam *)(function);
+  auto f = (FunctionToOptimize *)(targetParam->function);
+  unsigned int n = targetParam->n;
+
+  Parameters param(n);
+  for (unsigned int i = 0; i < n; ++i) {
+    param[i] = value[i];
+  }
+  auto v = f->evaluate(param);
+  Logger::timed << param << std::endl;
+  return -v;
+}
+
+
+Parameters optimizeParametersLBFGSB(FunctionToOptimize &function, 
+    const Parameters &startingParameters,
+    OptimizationSettings settings)
+{
+  unsigned int n = startingParameters.dimensions();
+  std::vector<double> xmin(n, 0.001);
+  std::vector<double> xmax(n, 2.0);
+  std::vector<double> x(n, 0.5);
+  for (unsigned int i = 0; i < n; ++i) {
+    x[i] = startingParameters[i];
+  }
+  std::vector<int> bound(n, CORAX_OPT_LBFGSB_BOUND_BOTH);
+  TargetParam targetFunction;
+  targetFunction.function = &function;
+  targetFunction.n = startingParameters.dimensions();
+  void *params = &targetFunction;
+
+  corax_opt_minimize_lbfgsb(&x[0],
+      &xmin[0],
+      &xmax[0],
+      &bound[0],
+      n,
+      1.0, // convergence tolerance 
+      0.001, // gradient epsilon 
+      params,
+      myTargetFunction);
+  Parameters res(n);
+  for (unsigned int i = 0; i < n; ++i) {
+    res[i] = x[i];
+  }
+  function.evaluate(res);
+  Logger::timed << "optx = " << res << std::endl;
+  return res;
+}
+
+
 Parameters optimizeParametersGradient(FunctionToOptimize &function,
     const Parameters &startingParameters,
     OptimizationSettings settings)
@@ -92,6 +152,7 @@ Parameters optimizeParametersGradient(FunctionToOptimize &function,
     double oldScore = currentRates.getScore();
     stop |= !lineSearchParameters(function, currentRates, gradient, llComputationsLine, settings);
     stop |= (currentRates.getScore() - oldScore) < settings.optimizationMinImprovement;
+    Logger::info << "after lineSearch " << currentRates << std::endl;
   }
   function.evaluate(currentRates);
   return currentRates;
