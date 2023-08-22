@@ -123,8 +123,14 @@ JointTree::JointTree(const std::string &newickString,
     double recWeight,
     bool safeMode,
     bool optimizeDTLRates,
-    const Parameters &ratesVector):
-  _libpllEvaluation(newickString, false, alignmentFilename, substitutionModel),
+    const Parameters &ratesVector,
+    const std::string &checkpointPath):
+  _checkpoint(checkpointPath),
+  _libpllEvaluation(
+      (_checkpoint.checkpointExists ? _checkpoint.geneTreeNewickStr : newickString), 
+      false, 
+      alignmentFilename, 
+      (_checkpoint.checkpointExists ? _checkpoint.substModelStr : substitutionModel)),
   _speciesTree(speciestree_file, true),
   _optimizeDTLRates(optimizeDTLRates),
   _safeMode(safeMode),
@@ -135,6 +141,9 @@ JointTree::JointTree(const std::string &newickString,
   _supportThreshold(supportThreshold),
   _madRooting(madRooting)
 {
+  if (_checkpoint.checkpointExists) {
+    Logger::info <<"using model " << _checkpoint.substModelStr << std::endl;
+  }
   _geneSpeciesMap.fill(geneSpeciesMapfile, newickString);
   if (recModelInfo.forceGeneTreeRoot) {
     _enforcedRootedGeneTree = newickString;
@@ -145,8 +154,12 @@ JointTree::JointTree(const std::string &newickString,
       recModelInfo,
       _enforcedRootedGeneTree
       );
-  Logger::info << ratesVector << std::endl;
-  setRates(ratesVector);
+  if (_checkpoint.checkpointExists) {
+    setRates(_checkpoint.ratesVector);
+  } else {
+    setRates(ratesVector);
+  }
+  Logger::info << _ratesVector << std::endl;
 
 }
 
@@ -288,5 +301,15 @@ bool JointTree::canSPRCrossBranch(const corax_unode_t *branch) const
   assert(root);
   assert(branch);
   return branch != root && branch->back != root;
+}
+    
+void JointTree::saveCheckpoint()
+{
+  _libpllEvaluation.getModel().alpha(_libpllEvaluation.getTreeInfo()->alphas[0] );
+  _checkpoint.substModelStr = _libpllEvaluation.getModelStr();
+  _checkpoint.geneTreeNewickStr = _libpllEvaluation.getGeneTree().getNewickString(); 
+  _checkpoint.ratesVector = _ratesVector; 
+  _checkpoint.save(true);
+
 }
 

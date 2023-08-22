@@ -44,11 +44,14 @@ void GeneRaxMaster::optimizeGeneTrees(Families &families,
   ParallelOfstream os(commandFile);
   std::string ratesFile = FileSystem::joinPaths(outputDir, "dtl_rates.txt");
   rates.save(ratesFile);
+  std::string checkpointDir = FileSystem::joinPaths(outputDir, "checkpoints");
+  FileSystem::mkdir(checkpointDir, true);
   for (size_t i = 0; i < families.size(); ++i) {
     auto &family = families[i];
     std::string familyOutput = FileSystem::joinPaths(output, resultName);
     familyOutput = FileSystem::joinPaths(familyOutput, family.name);
     std::string geneTreePath = FileSystem::joinPaths(familyOutput, "geneTree.newick");
+    std::string checkpointPath = FileSystem::joinPaths(checkpointDir, family.name);
     if (inPlace) {
       // todobenoit make this the normal behavior?
       geneTreePath = family.startingGeneTree;
@@ -94,7 +97,8 @@ void GeneRaxMaster::optimizeGeneTrees(Families &families,
     os << sprRadius  << " ";
     os << geneTreePath << " ";
     os << outputStats << " ";
-    os << static_cast<int>(madRooting) <<  std::endl;
+    os << static_cast<int>(madRooting) << " ";
+    os << checkpointPath << std::endl;
     family.startingGeneTree = geneTreePath;
     family.statsFile = outputStats;
   } 

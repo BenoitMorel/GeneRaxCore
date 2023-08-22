@@ -49,7 +49,8 @@ static void optimizeGeneTreesSlave(const std::string &startingGeneTreeFile,
     bool enableLibpll,
     int sprRadius,
     const std::string &outputGeneTree,
-    const std::string &outputStats) 
+    const std::string &outputStats, 
+    const std::string &checkpointPath) 
 {
   auto start = std::chrono::high_resolution_clock::now();
   Logger::timed << "Starting optimizing gene tree" << std::endl;
@@ -70,17 +71,25 @@ static void optimizeGeneTreesSlave(const std::string &startingGeneTreeFile,
       recWeight,
       false, //check
       recModelInfo.perFamilyRates,
-      ratesVector
+      ratesVector,
+      checkpointPath
       );
   jointTree->enableReconciliation(enableRec);
   jointTree->enableLibpll(enableLibpll);
   Logger::info << "Taxa number: " << jointTree->getGeneTaxaNumber() << std::endl;
-  jointTree->optimizeParameters(true,  enableRec);
+  if (jointTree->getCheckpoint().checkpointExists) {
+    Logger::info << "Checkpoint exists, skipping parameter optimization and starting from last best gene tree" << std::endl;
+  } else {
+    jointTree->optimizeParameters(true,  enableRec);
+    jointTree->saveCheckpoint();
+  }
   double bestLoglk = jointTree->computeJointLoglk();
   jointTree->printLoglk();
   Logger::info << "Initial ll = " << bestLoglk << std::endl;
   if (sprRadius > 0) {
-    while(SPRSearch::applySPRRound(*jointTree, sprRadius, true)) {} 
+    while(SPRSearch::applySPRRound(*jointTree, sprRadius, true)) {
+      jointTree->saveCheckpoint();
+    }
   }
   jointTree->printLoglk();
   if (outputGeneTree.size() && ParallelContext::getRank() == 0) {
@@ -114,7 +123,7 @@ static std::string getArg(const std::string &str)
 
 int GeneRaxSlave::optimizeGeneTreesMain(int argc, char** argv, void* comm)
 {
-  assert(argc == 17 + RecModelInfo::getArgc());
+  assert(argc == 18 + RecModelInfo::getArgc());
   ParallelContext::init(comm);
   Logger::timed << "Starting optimizeGeneTreesSlave" << std::endl;
   int i = 2;
@@ -142,6 +151,7 @@ int GeneRaxSlave::optimizeGeneTreesMain(int argc, char** argv, void* comm)
   std::string outputGeneTree(argv[i++]);
   std::string outputStats(argv[i++]);
   bool madRooting = bool(atoi(argv[i++]));
+  std::string checkpointPath(argv[i++]);
   optimizeGeneTreesSlave(startingGeneTreeFile,
       mappingFile,
       alignmentFile,
@@ -157,7 +167,8 @@ int GeneRaxSlave::optimizeGeneTreesMain(int argc, char** argv, void* comm)
       enableLibpll,
       sprRadius,
       outputGeneTree,
-      outputStats);
+      outputStats,
+      checkpointPath);
   ParallelContext::finalize();
   Logger::timed << "End of optimizeGeneTreesSlave" << std::endl;
   return 0;
