@@ -134,7 +134,7 @@ static void dumpSpeciesEventCountVector(ParallelOfstream &os,
     const std::vector<double> &eventCounts,
     const std::vector<std::string> &indexToLabel)
 {
-  os << "species,_label, speciations, duplications, losses, transfers, presence, origination" << std::endl;
+  os << "species_label, speciations, duplications, losses, transfers, presence, origination" << std::endl;
   auto N = indexToLabel.size();
   assert(Scenario::EVENT_TYPE_NUMBER * N == eventCounts.size());
   for (unsigned int i = 0; i < N; ++i) {
@@ -155,7 +155,7 @@ static void dumpSpeciesEventCountVector(ParallelOfstream &os,
 static void dumpSpeciesToEventCount(ParallelOfstream &os,
     const std::unordered_map<std::string, std::vector<double> > &speciesToEventCount)
 {
-  os << "species,_label, speciations, duplications, losses, transfers, presence, origination" << std::endl;
+  os << "species_label, speciations, duplications, losses, transfers, presence, origination" << std::endl;
   std::vector<double> defaultCount(6, 0.0);
   for (auto &it: speciesToEventCount) {
     if (defaultCount == it.second) {
