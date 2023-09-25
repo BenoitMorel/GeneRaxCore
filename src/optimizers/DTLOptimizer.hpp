@@ -19,7 +19,10 @@ struct OptimizationSettings {
     minAlpha(0.0000001),
     startingAlpha(0.1),
     epsilon(0.0000001),
-    verbose(false)
+    verbose(false),
+    individualParamOpt(false),
+    individualParamOptMinImprovement(10.0),
+    individualParamOptMaxIt(3)
   {}
 
   RecOpt strategy;
@@ -29,6 +32,9 @@ struct OptimizationSettings {
   double startingAlpha;
   double epsilon;
   bool verbose;
+  bool individualParamOpt;
+  double individualParamOptMinImprovement;
+  unsigned int individualParamOptMaxIt;
 };
 
 class FunctionToOptimize {

@@ -436,7 +436,21 @@ void Scenario::saveTransfers(const std::string &filename, bool masterRankOnly)
     }
   }
 }
-  
+ 
+
+double Scenario::countTransfer(const std::string &from, const std::string &to) 
+{
+  double res = 0.0;
+  for (auto &event: _events) {
+    if (event.type == ReconciliationEventType::EVENT_T || event.type == ReconciliationEventType::EVENT_TL) {
+      if (_speciesTree->nodes[event.speciesNode]->label == from && 
+          _speciesTree->nodes[event.destSpeciesNode]->label == to) {
+        res += 1.0;
+      }
+    }
+  }
+  return res;
+}
 
   
 void Scenario::saveLargestOrthoGroup(std::string &filename, bool masterRankOnly) const

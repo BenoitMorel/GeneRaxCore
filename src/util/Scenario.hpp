@@ -145,6 +145,7 @@ public:
    */
   void saveEventsCounts(const std::string &filename, bool masterRankOnly = true); 
   void saveTransfers(const std::string &filename, bool masterRankOnly = true); 
+  double countTransfer(const std::string &from, const std::string &to); 
   static void mergeTransfers(const PLLRootedTree &speciesTree,
       const std::string &filename,
       const std::vector<std::string> &filenames,

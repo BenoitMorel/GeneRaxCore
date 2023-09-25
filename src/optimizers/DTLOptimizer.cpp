@@ -120,12 +120,37 @@ Parameters optimizeParametersLBFGSB(FunctionToOptimize &function,
   return res;
 }
 
+class FunctionOneDim: public FunctionToOptimize {
+public: 
+  FunctionOneDim(const Parameters &parameters, 
+      unsigned int index,
+      FunctionToOptimize &fun): _parameters(parameters),
+        _index(index),
+        _fun(fun)
+  {
+    assert(_parameters.dimensions() != 1);
+  }
 
-Parameters optimizeParametersGradient(FunctionToOptimize &function,
+  virtual ~FunctionOneDim() {};
+  virtual double evaluate(Parameters &parameters) {
+    assert(parameters.dimensions() == 1);
+    _parameters[_index] = parameters[0];
+    auto res = _fun.evaluate(_parameters);
+    parameters.setScore(res);
+    return res;
+  }
+
+private:
+  Parameters _parameters;
+  unsigned int _index;
+  FunctionToOptimize &_fun;
+};
+
+
+static Parameters optimizeParametersGradient(FunctionToOptimize &function,
     const Parameters &startingParameters,
     OptimizationSettings settings)
 {
-  //settings.verbose = true;
   if (startingParameters.dimensions() == 0) {
     return Parameters();
   }
@@ -137,7 +162,7 @@ Parameters optimizeParametersGradient(FunctionToOptimize &function,
   unsigned int dimensions = startingParameters.dimensions();
   Parameters gradient(dimensions);
   if (settings.verbose) {
-    Logger::info << "Computing gradient..." << std::endl;
+    Logger::info << "Computing gradient epsilon = " << epsilon << "..." << std::endl;
   }
   bool stop = false;
   while (!stop) {
@@ -155,6 +180,33 @@ Parameters optimizeParametersGradient(FunctionToOptimize &function,
   }
   function.evaluate(currentRates);
   return currentRates;
+}
+
+static Parameters optimizeParametersIndividually(FunctionToOptimize &function,
+    const Parameters &startingParameters,
+    OptimizationSettings settings)
+{
+  if (startingParameters.dimensions() <= 1) {
+    return startingParameters;
+  }
+  settings.verbose = false;
+  const unsigned int N = startingParameters.dimensions();
+  Parameters currentParameters(startingParameters);
+  settings.optimizationMinImprovement = 1000000.0; // we only want one iteration
+  Logger::timed << "Starting individual parameter optimization on " << N << " parameters" << std::endl;
+  for (unsigned int i = 0; i < N; ++i) {
+    FunctionOneDim fun(currentParameters, i, function);
+    Parameters individualParam(1);
+    assert(individualParam.dimensions() == 1);
+    individualParam[0] = currentParameters[i];
+    individualParam.setScore(currentParameters.getScore());
+    individualParam = DTLOptimizer::optimizeParameters(fun, individualParam, settings);
+    Logger::timed << "Individual opt i=" << i << " pbefore=" << currentParameters[i] << " pafter=" << individualParam[0] 
+      << " lldfiff=" << individualParam.getScore() - currentParameters.getScore() << std::endl;
+    currentParameters[i] = individualParam[0];
+    currentParameters.setScore(individualParam.getScore());
+  }
+  return currentParameters;
 }
 
 class PerCoreFunction: public FunctionToOptimize {
@@ -350,18 +402,35 @@ Parameters DTLOptimizer::optimizeParameters(FunctionToOptimize &function,
     Parameters startingParameters,
     OptimizationSettings settings)
 {
+  auto res = startingParameters;
   switch(settings.strategy) {
   case RecOpt::Gradient:
-      return optimizeParametersGradient(function, 
+      res = optimizeParametersGradient(function, 
           startingParameters, 
           settings);
+      break;
   case RecOpt::Simplex:
-      return optimizeParametersNelderMear(function, 
+      res = optimizeParametersNelderMear(function, 
           startingParameters);
+      break;
   default:
       assert(false);
-      return startingParameters;
+      break;
   }
+
+  if (settings.individualParamOpt && startingParameters.dimensions() > 1) {
+    double diff = 0.0;
+    unsigned int it = 0;
+    do {
+      auto ll = res.getScore();
+      res = optimizeParametersIndividually(function, res, settings);
+      diff = res.getScore() - ll;
+      ll = res.getScore();
+      ++it;
+      Logger::timed << "lldiff after one round of individual opt: " << diff << std::endl;
+    } while (diff > settings.individualParamOptMinImprovement && it < settings.individualParamOptMaxIt);
+  }
+  return res;
 }
       
 /*
