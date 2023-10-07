@@ -136,6 +136,7 @@ public:
     assert(parameters.dimensions() == 1);
     _parameters[_index] = parameters[0];
     auto res = _fun.evaluate(_parameters);
+    parameters[0] = _parameters[_index];
     parameters.setScore(res);
     return res;
   }

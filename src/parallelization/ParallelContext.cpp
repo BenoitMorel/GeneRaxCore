@@ -15,6 +15,7 @@ void ParallelContext::init(void *commPtr)
 {
   if (commPtr && *static_cast<int *>(commPtr) == -1) {
     _mpiEnabled = false;
+    Logger::info << "Warning: this program was compiled without MPI. Make sure you are not running it with mpiexec or mpirun." << std::endl; 
     return;
   }
 #ifdef WITH_MPI

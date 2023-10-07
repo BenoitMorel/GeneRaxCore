@@ -73,6 +73,13 @@ public:
       //p = std::min(1.0, p);
     }
   }
+  
+  void constrain(double min, double max) {
+    for (auto &p: _parameters) {
+      p = std::max(min, p);
+      p = std::min(p, max);
+    }
+  }
 
   double operator [](unsigned int i) const    {return _parameters[i];}
   double & operator [](unsigned int i) {return _parameters[i];}
