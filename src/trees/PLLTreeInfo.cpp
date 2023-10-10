@@ -89,7 +89,7 @@ corax_partition_t * PLLTreeInfo::buildPartition(const PLLSequencePtrs &sequences
   unsigned int innerNumber = tipNumber -1;
   unsigned int edgesNumber = 2 * tipNumber - 1;
   unsigned int sitesNumber = sequences[0]->len;
-  unsigned int ratesMatrices = 1;
+  unsigned int ratesMatrices = _model->num_submodels();
   corax_partition_t *partition = corax_partition_create(tipNumber,
       innerNumber,
       _model->num_states(),
@@ -128,7 +128,6 @@ corax_treeinfo_t *PLLTreeInfo::buildTreeInfo(const Model &model,
   // treeinfo
   int params_to_optimize = model.params_to_optimize();
   params_to_optimize |= CORAX_OPT_PARAM_BRANCHES_ITERATIVE;
-  std::vector<unsigned int> params_indices(model.num_ratecats(), 0); 
   auto treeinfo = corax_treeinfo_create(utree.getAnyInnerNode(), 
       utree.getLeafNumber(), 1, CORAX_BRLEN_SCALED);
   if (!treeinfo || !treeinfo->root)
@@ -137,7 +136,7 @@ corax_treeinfo_t *PLLTreeInfo::buildTreeInfo(const Model &model,
       params_to_optimize,
       model.gamma_mode(),
       model.alpha(), 
-      &params_indices[0],
+      model.ratecat_submodels().data(),
       model.submodel(0).rate_sym().data());
   return treeinfo;
 }
