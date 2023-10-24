@@ -133,9 +133,20 @@ void GeneSpeciesMapping::buildFromTreerecsMapping(std::ifstream &f)
 void GeneSpeciesMapping::buildFromTrees(const std::string &geneTreeStrOrFile)
 {
   std::string str = geneTreeStrOrFile;
-  FileSystem::replaceWithContentIfFile(str);
-  auto tree = PLLUnrootedTree::buildFromStrOrFile(geneTreeStrOrFile); 
-  auto labels = tree->getLabels();
+  std::ifstream ifs(geneTreeStrOrFile);
+  if (ifs.good()) {
+    if (ifs.peek() == '#') {
+      std::string temp;
+      std::getline(ifs, temp);
+      std::getline(ifs, str);
+    } else {
+     str.assign((std::istreambuf_iterator<char>(ifs)),
+      (std::istreambuf_iterator<char>()) );
+    }
+  }
+  // now str is a newick string
+  PLLUnrootedTree tree(str, false); 
+  auto labels = tree.getLabels();
   fillFromGeneLabels(labels);
 }
 

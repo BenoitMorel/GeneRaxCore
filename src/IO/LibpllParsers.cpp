@@ -116,6 +116,12 @@ corax_utree_t *LibpllParsers::readNewickFromFile(const std::string &newickFilena
   if (!std::getline(is, line)) {
     throw LibpllException("Error while reading tree (file is empty) from file: ", newickFilename); 
   }
+  if (line[0] == '#') {
+    // we are reading a .ale file: the newick string is the next line
+    if (!std::getline(is, line)) {
+      throw LibpllException("Error while reading tree (file is empty) from .ale file: ", newickFilename); 
+    }
+  }
   corax_utree_t *res = nullptr;
   try {
     res = readNewickFromStr(line);

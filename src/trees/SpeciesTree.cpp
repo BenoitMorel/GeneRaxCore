@@ -364,8 +364,8 @@ std::unordered_set<std::string> SpeciesTree::getLabelsFromFamilies(const Familie
   GeneSpeciesMapping mappings;
   for (const auto &family: families) {
     std::string geneTreeStr;
-    FileSystem::getFileContent(family.startingGeneTree, geneTreeStr);
-    mappings.fill(family.mappingFile, geneTreeStr);
+    //FileSystem::getFileContent(family.startingGeneTree, geneTreeStr);
+    mappings.fill(family.mappingFile, family.startingGeneTree);
   }
   std::unordered_set<std::string> leaves;
   for (auto &mapping: mappings.getMap()) {

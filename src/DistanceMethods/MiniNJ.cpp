@@ -186,8 +186,17 @@ void MiniNJ::computeDistanceMatrix(const Families &families,
     mappings.fill(family.mappingFile, family.startingGeneTree);
     std::ifstream reader(family.startingGeneTree);
     std::string geneTreeStr;
+    std::vector<std::string> geneTreeStrings;
     while (std::getline(reader, geneTreeStr)) {
-      PLLUnrootedTree geneTree(geneTreeStr, false);
+      geneTreeStrings.push_back(geneTreeStr);
+    }
+    if (geneTreeStrings[0][0] == '#') {
+      // this is a .ale file
+      geneTreeStrings[0] = geneTreeStrings[1];
+      geneTreeStrings.resize(1);
+    }
+    for (const auto &str: geneTreeStrings) {
+      PLLUnrootedTree geneTree(str, false);
       geneDistancesFromGeneTree(geneTree, 
           mappings,
           speciesStringToSpeciesId,

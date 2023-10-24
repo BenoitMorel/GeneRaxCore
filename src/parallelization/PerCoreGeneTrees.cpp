@@ -85,6 +85,11 @@ PerCoreGeneTrees::PerCoreGeneTrees(const Families &families,
     FileSystem::getFileContent(families[i].startingGeneTree, geneTreeStr);
     std::vector<std::string> geneTreeStrVector;
     splitLines(geneTreeStr, geneTreeStrVector);
+    if (geneTreeStrVector[0][0] == '#') {
+      geneTreeStr = geneTreeStrVector[1];
+      geneTreeStrVector.clear();
+      geneTreeStrVector.push_back(geneTreeStr);
+    }
     if (acceptMultipleTrees) {
       if (index == 0) {
         _geneTrees.resize(myIndices.size() * geneTreeStrVector.size());
