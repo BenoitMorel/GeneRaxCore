@@ -974,4 +974,19 @@ void PLLUnrootedTree::ensureUniqueLabels()
   }
 }
   
+bool PLLUnrootedTree::hasUniqueLeafLabels() const
+{
+  std::unordered_set<std::string> labels;
+  for (auto node: getLeaves()) {
+    std::string label(node->label);
+    if (labels.end() != labels.find(label)) {
+      return false;
+    }
+    labels.insert(label);
+  }
+  return true;
+}
+  
+
+
 

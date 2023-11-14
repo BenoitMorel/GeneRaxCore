@@ -238,6 +238,11 @@ public:
   bool isBinary() const;
   
   void ensureUniqueLabels();
+  
+  /**
+  * Return true if each leaf label is unique in this tree
+  */
+  bool hasUniqueLeafLabels() const;
 
   /**
    *  Return the leaf node that has the label label,
