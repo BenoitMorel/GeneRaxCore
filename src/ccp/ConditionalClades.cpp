@@ -104,7 +104,7 @@ void printClade(const CCPClade &clade,
 }
 
 
-static void readTrees(const std::string &inputFile,
+static bool readTrees(const std::string &inputFile,
     const std::string &likelihoodFile,
     bool rooted,
     WeightedTrees &weightedTrees,
@@ -136,6 +136,10 @@ static void readTrees(const std::string &inputFile,
   unsigned int llIndex = 0;
   for (auto line: lines) {
     TreeWraper wraper(line, rooted);
+    if (!wraper.tree->hasUniqueLeafLabels()) {
+      Logger::error << "Error, the trees in " << inputFile << " have duplicated leaf labels" << std::endl;
+      return false;
+    }
     if (useLikelihoods) {
       wraper.ll = likelihoods[llIndex++];
     };
@@ -155,6 +159,7 @@ static void readTrees(const std::string &inputFile,
     inputTrees++;
   }
   uniqueInputTrees = weightedTrees.size();
+  return true;
 }
 
 // extract all clades and map them to clade IDs, which 
@@ -312,7 +317,8 @@ ConditionalClades::ConditionalClades(const std::string &inputFile,
       unsigned int sampleFrequency):
   _inputTrees(0),
   _uniqueInputTrees(0),
-  _ccpRooting(ccpRooting)
+  _ccpRooting(ccpRooting),
+  _isValid(true)
 {
   std::ifstream is(inputFile);
   if (is.peek() == '#') {
@@ -481,13 +487,16 @@ void ConditionalClades::buildFromGeneTrees(const std::string &inputFile,
   CCPClade emptyClade;
   CCPClade fullClade;
   WeightedTrees weightedTrees;
-  readTrees(inputFile,
+  _isValid &= readTrees(inputFile,
       likelihoods,
       (ccpRooting == CCPRooting::ROOTED),
       weightedTrees, 
       _inputTrees, 
       _uniqueInputTrees,
       sampleFrequency); 
+  if (!isValid()) {
+    return;
+  }
   auto &anyTree = *(weightedTrees.begin()->first.tree);
   for (auto leaf: anyTree.getLabels()) {
     leafToId.insert({leaf, leafToId.size()});

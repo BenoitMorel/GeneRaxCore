@@ -101,6 +101,7 @@ class ConditionalClades {
 
   void reorderClades(const std::vector<CID> &mappings);
 
+  bool isValid() const {return _isValid;}
 private:
   
   unsigned int _inputTrees;
@@ -111,6 +112,7 @@ private:
   CladeToCID _cladeToCID;
   CIDToClade _CIDToClade;
   std::vector<CladeSplits> _allCladeSplits;
+  bool _isValid;
 private:
   void _fillCCP(SubcladeCounts &subcladeCounts,
       SubcladeBLs &subcladeBLs,
