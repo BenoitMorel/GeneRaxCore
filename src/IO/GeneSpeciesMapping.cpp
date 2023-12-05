@@ -143,6 +143,7 @@ void GeneSpeciesMapping::buildFromTrees(const std::string &geneTreeStrOrFile)
      str.assign((std::istreambuf_iterator<char>(ifs)),
       (std::istreambuf_iterator<char>()) );
     }
+    str = str.substr(0, str.find(";") + 1);
   }
   // now str is a newick string
   PLLUnrootedTree tree(str, false); 
