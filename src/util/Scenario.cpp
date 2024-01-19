@@ -347,6 +347,13 @@ void Scenario::saveReconciliation(ParallelOfstream &os, ReconciliationFormat for
         _geneIdToEvents, 
         os);
     break;
+  case ReconciliationFormat::ALE:
+    ReconciliationWriter::saveReconciliationALE(_speciesTree, 
+        _geneRoot, 
+        _virtualRootIndex, 
+        _geneIdToEvents, 
+        os);
+    break;
   case ReconciliationFormat::RecPhyloXML:
     ReconciliationWriter::saveReconciliationRecPhyloXML(_speciesTree, 
         _virtualRootIndex, 

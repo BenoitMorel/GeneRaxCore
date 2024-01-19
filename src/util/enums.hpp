@@ -56,7 +56,7 @@ enum class OriginationStrategy {
  *  Output formats for reconciled gene trees
  */
 enum class ReconciliationFormat {
-  NHX = 0, RecPhyloXML, NewickEvents
+  NHX = 0, RecPhyloXML, NewickEvents, ALE
 };
 
 

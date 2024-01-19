@@ -4,7 +4,7 @@
 #include <corax/corax.h>
 #include <trees/PLLRootedTree.hpp>
 
-static void printEvent(const Scenario::Event &event, corax_rtree_t *speciesTree, corax_unode_t *node, ParallelOfstream &os)
+static void printEventNHX(const Scenario::Event &event, corax_rtree_t *speciesTree, corax_unode_t *node, ParallelOfstream &os)
 {
   if (event.isValid()) {
     os << "[&&NHX";
@@ -57,9 +57,9 @@ static void recursivelySaveReconciliationsNHX(corax_rtree_t *speciesTree,
   if (!isVirtualRoot) {
     os << ":" << node->length;
   }
-  printEvent(geneToEvents[node->node_index].back(), speciesTree, node, os);
+  printEventNHX(geneToEvents[node->node_index].back(), speciesTree, node, os);
 }
-  
+
 void ReconciliationWriter::saveReconciliationNHX(corax_rtree_t *speciesTree, 
     corax_unode_t *geneRoot, 
     unsigned int virtualRootIndex,
@@ -72,6 +72,85 @@ void ReconciliationWriter::saveReconciliationNHX(corax_rtree_t *speciesTree,
   virtualRoot.label = nullptr;
   virtualRoot.length = 0.0;
   recursivelySaveReconciliationsNHX(speciesTree, &virtualRoot, true, geneToEvents, os);
+  os << ";";
+}
+
+static void printEventALE(const Scenario::Event &event, corax_rtree_t *speciesTree, corax_unode_t *node, ParallelOfstream &os)
+{
+  auto label = speciesTree->nodes[event.speciesNode]->label;
+  if (event.isValid()) {
+    os << ".";
+    switch(event.type) {
+      case ReconciliationEventType::EVENT_S:
+      case ReconciliationEventType::EVENT_SL:
+        os << label;
+        break;
+      case ReconciliationEventType::EVENT_D:
+        os << "D@" << label;
+        break;
+      case ReconciliationEventType::EVENT_T:
+      case ReconciliationEventType::EVENT_TL:
+        os << "T@" <<  label << "->" << speciesTree->nodes[event.destSpeciesNode]->label;
+        break;
+      case ReconciliationEventType::EVENT_L:
+      case ReconciliationEventType::EVENT_None:
+      case ReconciliationEventType::EVENT_Invalid:
+        break;
+    };
+  }
+}
+
+static void recursivelySaveReconciliationsALE(corax_rtree_t *speciesTree, 
+    corax_unode_t *node, 
+    bool isVirtualRoot, 
+    std::vector<std::vector<Scenario::Event> > &geneToEvents, 
+    ParallelOfstream &os)
+{
+  
+  if(node->next) {
+    corax_unode_t *left = nullptr;
+    corax_unode_t *right = nullptr;
+    if (isVirtualRoot) {
+      left = node->next;
+      right = node->next->back;
+    } else {
+    left = node->next->back;
+      right = node->next->next->back;
+    }
+    os << "(";
+    recursivelySaveReconciliationsALE(speciesTree, left, false, geneToEvents, os);
+    os << ",";
+    recursivelySaveReconciliationsALE(speciesTree, right, false, geneToEvents, os);
+    os << ")";
+  } 
+  if (!node->next) {
+    os << node->label;
+  }
+  if (node->next) {
+    if (geneToEvents[node->node_index].size() > 1) {
+      std::cerr << "hey" << std::endl;
+    }
+    for (auto &event: geneToEvents[node->node_index]) {
+      printEventALE(event, speciesTree, node, os);
+    }
+  }
+  if (!isVirtualRoot) {
+    os << ":" << node->length;
+  }
+}
+  
+void ReconciliationWriter::saveReconciliationALE(corax_rtree_t *speciesTree, 
+    corax_unode_t *geneRoot, 
+    unsigned int virtualRootIndex,
+    std::vector<std::vector<Scenario::Event> > &geneToEvents, 
+    ParallelOfstream &os) 
+{
+  corax_unode_t virtualRoot;
+  virtualRoot.next = geneRoot;
+  virtualRoot.node_index = virtualRootIndex;
+  virtualRoot.label = nullptr;
+  virtualRoot.length = 0.0;
+  recursivelySaveReconciliationsALE(speciesTree, &virtualRoot, true, geneToEvents, os);
   os << ";";
 }
 
