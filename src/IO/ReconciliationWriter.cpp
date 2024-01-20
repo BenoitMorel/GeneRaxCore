@@ -127,9 +127,6 @@ static void recursivelySaveReconciliationsALE(corax_rtree_t *speciesTree,
     os << node->label;
   }
   if (node->next) {
-    if (geneToEvents[node->node_index].size() > 1) {
-      std::cerr << "hey" << std::endl;
-    }
     for (auto &event: geneToEvents[node->node_index]) {
       printEventALE(event, speciesTree, node, os);
     }
