@@ -1,4 +1,10 @@
 
+find_package(GSL REQUIRED)
+if (GSL_FOUND)
+    set(WITH_GSL TRUE)
+    add_definitions(-DWITH_GSL)
+endif()
+
 set(generaxcore_SOURCES 
   branchlengths/ReconciliationBLEstimator.cpp
   ccp/ConditionalClades.cpp
@@ -66,6 +72,10 @@ set(generaxcore_SOURCES
   )
 
 add_library(generaxcore STATIC ${generaxcore_SOURCES})
+if (GSL_FOUND)
+  target_link_libraries(generaxcore GSL::gsl )
+endif()
+
 add_subdirectory(tests)
 target_include_directories(generaxcore
   PUBLIC ${GENERAXCORE_INCLUDE_DIRS}

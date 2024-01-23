@@ -155,6 +155,10 @@ public:
       return "SIMPLEX";
     case RecOpt::Gradient:
       return "GRADIENT";
+    case RecOpt::LBFGSB:
+      return "LBFGSB";
+    case RecOpt::GSL:
+      return "GSL";
     case RecOpt::None:
       return "NONE";
     }
@@ -168,6 +172,10 @@ public:
       return RecOpt::Simplex;
     } else if (str == "GRADIENT") {
       return RecOpt::Gradient;
+    } else if (str == "LBFGSB") {
+      return RecOpt::LBFGSB;
+    } else if (str == "GSL") {
+      return RecOpt::GSL;
     } else if (str == "NONE") {
       return RecOpt::None;
     } else {

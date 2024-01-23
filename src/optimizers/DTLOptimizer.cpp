@@ -9,6 +9,7 @@
 #include <iostream>
 #include <cmath>
 #include <corax/optimize/opt_generic.h>
+#include <gsl/gsl_multimin.h>
 
 static bool isValidLikelihood(double ll) {
   return std::isnormal(ll) && ll < -0.0000001;
@@ -64,8 +65,8 @@ static bool lineSearchParameters(FunctionToOptimize &function,
 
 
 struct TargetParam {
-    FunctionToOptimize *function;
-    unsigned int n;
+  FunctionToOptimize *function;
+  unsigned int n;
 };
 
 
@@ -121,30 +122,30 @@ Parameters optimizeParametersLBFGSB(FunctionToOptimize &function,
 }
 
 class FunctionOneDim: public FunctionToOptimize {
-public: 
-  FunctionOneDim(const Parameters &parameters, 
-      unsigned int index,
-      FunctionToOptimize &fun): _parameters(parameters),
-        _index(index),
-        _fun(fun)
+  public: 
+    FunctionOneDim(const Parameters &parameters, 
+        unsigned int index,
+        FunctionToOptimize &fun): _parameters(parameters),
+    _index(index),
+    _fun(fun)
   {
     assert(_parameters.dimensions() != 1);
   }
 
-  virtual ~FunctionOneDim() {};
-  virtual double evaluate(Parameters &parameters) {
-    assert(parameters.dimensions() == 1);
-    _parameters[_index] = parameters[0];
-    auto res = _fun.evaluate(_parameters);
-    parameters[0] = _parameters[_index];
-    parameters.setScore(res);
-    return res;
-  }
+    virtual ~FunctionOneDim() {};
+    virtual double evaluate(Parameters &parameters) {
+      assert(parameters.dimensions() == 1);
+      _parameters[_index] = parameters[0];
+      auto res = _fun.evaluate(_parameters);
+      parameters[0] = _parameters[_index];
+      parameters.setScore(res);
+      return res;
+    }
 
-private:
-  Parameters _parameters;
-  unsigned int _index;
-  FunctionToOptimize &_fun;
+  private:
+    Parameters _parameters;
+    unsigned int _index;
+    FunctionToOptimize &_fun;
 };
 
 
@@ -211,24 +212,24 @@ static Parameters optimizeParametersIndividually(FunctionToOptimize &function,
 }
 
 class PerCoreFunction: public FunctionToOptimize {
-public:
-  PerCoreFunction(PerCoreEvaluations &evaluations):_evaluations(evaluations){}
-  virtual double evaluate(Parameters &parameters) {
-    parameters.ensurePositivity();
-    double ll = 0.0;
-    for (auto evaluation: _evaluations) {
-      evaluation->setRates(parameters);
-      ll += evaluation->evaluate();
+  public:
+    PerCoreFunction(PerCoreEvaluations &evaluations):_evaluations(evaluations){}
+    virtual double evaluate(Parameters &parameters) {
+      parameters.ensurePositivity();
+      double ll = 0.0;
+      for (auto evaluation: _evaluations) {
+        evaluation->setRates(parameters);
+        ll += evaluation->evaluate();
+      }
+      ParallelContext::sumDouble(ll);
+      if (!isValidLikelihood(ll)) {
+        ll = -std::numeric_limits<double>::infinity();
+      }
+      parameters.setScore(ll);
+      return ll;
     }
-    ParallelContext::sumDouble(ll);
-    if (!isValidLikelihood(ll)) {
-      ll = -std::numeric_limits<double>::infinity();
-    }
-    parameters.setScore(ll);
-    return ll;
-  }
-private:
-  PerCoreEvaluations &_evaluations;
+  private:
+    PerCoreEvaluations &_evaluations;
 };
 
 Parameters DTLOptimizer::optimizeParameters(PerCoreEvaluations &evaluations,
@@ -373,7 +374,7 @@ static Parameters optimizeParametersNelderMear(FunctionToOptimize &function,
   }
   Parameters worstRate = startingParameters;
   unsigned int currentIt = 0;
- 
+
   while (worstRate.distance(rates.back()) > 0.005) {
     std::sort(rates.begin(), rates.end());
     worstRate = rates.back();
@@ -399,22 +400,112 @@ static Parameters optimizeParametersNelderMear(FunctionToOptimize &function,
   return rates[0];
 }
 
+#ifdef WITH_GSL
+
+static double gslEval (const gsl_vector *v, void *params)
+{
+  auto targetParam = (TargetParam *)(params);
+  auto f = (FunctionToOptimize *)(targetParam->function);
+  unsigned int n = v->size;
+  Parameters values(n);
+  for (unsigned int i = 0; i < n; ++i) {
+    values[i] = gsl_vector_get(v, i);
+  }
+  auto res = f->evaluate(values);
+  Logger::timed << values << std::endl;
+  return -res;
+}
+
+static Parameters optimizeParametersGSL(FunctionToOptimize &function, 
+    const Parameters &startingParameters,
+    OptimizationSettings settings)
+{
+  unsigned int n = startingParameters.dimensions();
+  TargetParam targetFunction;
+  targetFunction.function = &function;
+  targetFunction.n = startingParameters.dimensions();
+  
+  const gsl_multimin_fminimizer_type *T =
+    gsl_multimin_fminimizer_nmsimplex2;
+  gsl_multimin_function minex_func;
+
+  size_t iter = 0;
+  int status;
+  double size;
+
+  /* Starting point */
+  auto x = gsl_vector_alloc (n);
+  for (unsigned int i = 0; i < n; ++i) {
+    gsl_vector_set (x, i, startingParameters[i]);
+  }
+
+  /* Set initial step sizes to 1 */
+  auto ss = gsl_vector_alloc (n);
+  gsl_vector_set_all (ss, 1.0);
+
+  /* Initialize method and iterate */
+  minex_func.n = n;
+  minex_func.f = &gslEval;
+  minex_func.params = &targetFunction;
+
+  auto s = gsl_multimin_fminimizer_alloc (T, n);
+  gsl_multimin_fminimizer_set (s, &minex_func, x, ss);
+
+  do
+  {
+    iter++;
+    status = gsl_multimin_fminimizer_iterate(s);
+    if (status) {
+      break;
+    }
+    size = gsl_multimin_fminimizer_size (s);
+    status = gsl_multimin_test_size (size, 1e-2);
+  }
+  while (status == GSL_CONTINUE && iter < 1000);
+
+  Parameters res(n);
+  for (unsigned int i = 0; i < n; ++i) {
+    res[i] = gsl_vector_get(s->x, i);
+  }
+  res.setScore(s->fval);
+  gsl_vector_free(x);
+  gsl_vector_free(ss);
+  gsl_multimin_fminimizer_free (s);
+  return res; 
+}
+
+#endif
+
 Parameters DTLOptimizer::optimizeParameters(FunctionToOptimize &function,
     Parameters startingParameters,
     OptimizationSettings settings)
 {
   auto res = startingParameters;
   switch(settings.strategy) {
-  case RecOpt::Gradient:
+    case RecOpt::Gradient:
       res = optimizeParametersGradient(function, 
           startingParameters, 
           settings);
       break;
-  case RecOpt::Simplex:
+    case RecOpt::LBFGSB:
+      res = optimizeParametersLBFGSB(function, 
+          startingParameters, 
+          settings);
+      break;
+    case RecOpt::GSL:
+#ifdef WITH_GSL
+      res = optimizeParametersGSL(function, 
+          startingParameters, 
+          settings);
+#else
+      std::cerr << "Error, GSL routine not available" << std::endl;
+#endif
+      break;
+    case RecOpt::Simplex:
       res = optimizeParametersNelderMear(function, 
           startingParameters);
       break;
-  default:
+    default:
       assert(false);
       break;
   }
@@ -433,31 +524,5 @@ Parameters DTLOptimizer::optimizeParameters(FunctionToOptimize &function,
   }
   return res;
 }
-      
-/*
-static Parameters optimizeParametersCorax(FunctionToOptimize &function, 
-    const Parameters &startingParameters,
-    OptimizationSettings settings = OptimizationSettings())
-{
-  unsigned int xnum = startingParameters.dimensions();
-  //double *xparameters = &startingParameters.getVector()[0];
-  //double **x = &xparameters;
-  //Parameters paramMin(
 
-  return startingParameters;
-}
-*/
-/*
-CORAX_EXPORT double corax_opt_minimize_lbfgsb_multi(
-    unsigned int  xnum,
-    double      **x,
-    double      **xmin,
-    double      **xmax,
-    int         **bound,
-    unsigned int *n,
-    unsigned int  nmax,
-    double        factr,
-    double        pgtol,
-    void         *params,
-    double (*target_funk)(void *, double **, double *, int *));
-*/
+

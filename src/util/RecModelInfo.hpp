@@ -7,6 +7,8 @@
 struct RecModelInfo {
   // reconciliation model (UndatedDTL, UndatedDL, etc)
   RecModel model;
+  // optimizer for rate optimization (Gradient, Simplex, etc.)
+  RecOpt recOpt;
   // if set to true, each family can have different set of rates
   bool perFamilyRates;
   // number of gamma categories for rate heterogeneity among families
@@ -42,6 +44,7 @@ struct RecModelInfo {
 
   RecModelInfo():
     model(RecModel::UndatedDTL),
+    recOpt(RecOpt::Gradient),
     perFamilyRates(true),
     gammaCategories(1),
     originationStrategy(OriginationStrategy::ROOT),
@@ -59,6 +62,7 @@ struct RecModelInfo {
   }
 
   RecModelInfo(RecModel model,
+      RecOpt recOpt,
       bool perFamilyRates,
       unsigned int gammaCategories,
       OriginationStrategy originationStrategy,
@@ -73,6 +77,7 @@ struct RecModelInfo {
       const std::string &fractionMissingFile,
       bool memorySavings):
     model(model),
+    recOpt(recOpt),
     perFamilyRates(perFamilyRates),
     gammaCategories(gammaCategories),
     originationStrategy(originationStrategy),
@@ -93,6 +98,7 @@ struct RecModelInfo {
   void readFromArgv(char** argv, int &i)
   {
     model = RecModel(atoi(argv[i++]));  
+    recOpt = RecOpt(atoi(argv[i++]));  
     perFamilyRates = bool(atoi(argv[i++]));
     gammaCategories = atoi(argv[i++]);
     originationStrategy = Enums::strToOrigination(argv[i++]);
@@ -116,6 +122,7 @@ struct RecModelInfo {
   {
     std::vector<std::string> argv;
     argv.push_back(std::to_string(static_cast<int>(model)));
+    argv.push_back(std::to_string(static_cast<int>(recOpt)));
     argv.push_back(std::to_string(static_cast<int>(perFamilyRates)));
     argv.push_back(std::to_string(static_cast<int>(gammaCategories)));
     argv.push_back(Enums::originationToStr(originationStrategy));
@@ -138,7 +145,7 @@ struct RecModelInfo {
 
   static int getArgc() 
   {
-    return 14;
+    return 15;
   }
 
   unsigned int modelFreeParameters() const {
