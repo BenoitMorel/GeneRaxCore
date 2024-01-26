@@ -9,7 +9,9 @@
 #include <iostream>
 #include <cmath>
 #include <corax/optimize/opt_generic.h>
+#ifdef WITH_GSL
 #include <gsl/gsl_multimin.h>
+#endif
 
 static bool isValidLikelihood(double ll) {
   return std::isnormal(ll) && ll < -0.0000001;
