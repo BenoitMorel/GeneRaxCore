@@ -30,7 +30,7 @@ endif ()
 
 add_subdirectory(ext)
 
-if (NOT DISABLE_MPI)
+if (NOT DISABL
   include(FindMPI)
   if(MPI_FOUND)
     set(WITH_MPI TRUE)

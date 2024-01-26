@@ -1,5 +1,5 @@
 
-find_package(GSL REQUIRED)
+find_package(GSL) # REQUIRED)
 if (GSL_FOUND)
     set(WITH_GSL TRUE)
     add_definitions(-DWITH_GSL)
