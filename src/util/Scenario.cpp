@@ -577,8 +577,7 @@ void Scenario::saveOriginsGlobal(PLLRootedTree &speciesTree,
     }
     std::sort(transferPairs.rbegin(), transferPairs.rend());
     ParallelOfstream os(output);
-    os << "from_parent_surviving, " << double(fromS[j]) / double(samples) << std::endl;
-    os << "from_parent_exctinct, " << double(fromSButL[j]) / double(samples) << std::endl;
+    os << "vertical: " << double(fromS[j] + fromSButL[j]) / double(samples) << std::endl;
     for (auto p: transferPairs) {
       os << idToLabel[p.id1] 
         << ", " << double(p.count) / double(samples)
