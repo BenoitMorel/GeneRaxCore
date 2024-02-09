@@ -5,6 +5,7 @@
 #include <util/Scenario.hpp>
 #include <IO/Logger.hpp>
 #include <util/enums.hpp>
+#include <util/types.hpp>
 #include <util/RecModelInfo.hpp>
 #include <cmath>
 #include <unordered_set>
@@ -17,7 +18,6 @@
 #define ASSERT_PROBA(x) assert(IS_PROBA(x));
 
 double log(ScaledValue v);
-typedef std::vector< std::vector <double> > RatesVector;
 
 inline double solveSecondDegreePolynome(double a, double b, double c) 
 {
