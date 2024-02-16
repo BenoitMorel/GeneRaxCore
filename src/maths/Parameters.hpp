@@ -6,7 +6,7 @@
 #include <IO/Logger.hpp>
 #include <fstream>
 #include <cmath>
-
+#include <cassert>
 
 class Parameters {
 public:
