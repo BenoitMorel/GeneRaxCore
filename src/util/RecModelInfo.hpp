@@ -148,6 +148,15 @@ struct RecModelInfo {
     return 15;
   }
 
+  std::vector<char> getParamTypes() const {
+    std::vector<char> res;
+    for (auto str: Enums::parameterNames(model)) {
+      assert(str.size() == 1);
+      res.push_back(str[0]);
+    }
+    return res;
+  }
+
   unsigned int modelFreeParameters() const {
     return Enums::freeParameters(model);
   }
