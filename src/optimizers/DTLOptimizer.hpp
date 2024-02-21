@@ -10,6 +10,15 @@ class PerCoreGeneTrees;
 #include <memory>
 
 class RootedTree;
+  
+class DTLOptimizerListener {
+  public:
+    /**
+     *  Callback called when we find a better set of parameters
+     *  (e.g. to save checkpoint)
+     */
+    virtual void onBetterParametersFoundCallback() = 0;
+};
 
 struct OptimizationSettings {
   OptimizationSettings(): 
@@ -35,6 +44,14 @@ struct OptimizationSettings {
   bool individualParamOpt;
   double individualParamOptMinImprovement;
   unsigned int individualParamOptMaxIt;
+  std::vector<DTLOptimizerListener *> listeners;
+
+  void onBetterParametersFoundCallback() {
+    for (auto listener: listeners) {
+      listener->onBetterParametersFoundCallback();
+    }
+  }
+
 };
 
 class FunctionToOptimize {
@@ -47,7 +64,8 @@ public:
 class DTLOptimizer {
 public:
   DTLOptimizer() = delete;
-
+  
+  
   /**
    *  Generic parallel method for parameter optimization. Finds the 
    *  parameters (starting from startingParameters) that optimizes the 

@@ -181,6 +181,9 @@ static Parameters optimizeParametersGradient(FunctionToOptimize &function,
     double oldScore = currentRates.getScore();
     stop |= !lineSearchParameters(function, currentRates, gradient, llComputationsLine, settings);
     stop |= (currentRates.getScore() - oldScore) < settings.optimizationMinImprovement;
+    if (!stop) {
+      settings.onBetterParametersFoundCallback();
+    }
   }
   function.evaluate(currentRates);
   return currentRates;
@@ -209,6 +212,7 @@ static Parameters optimizeParametersIndividually(FunctionToOptimize &function,
       << " lldfiff=" << individualParam.getScore() - currentParameters.getScore() << std::endl;
     currentParameters[i] = individualParam[0];
     currentParameters.setScore(individualParam.getScore());
+    settings.onBetterParametersFoundCallback();
   }
   return currentParameters;
 }

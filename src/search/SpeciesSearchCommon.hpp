@@ -236,6 +236,20 @@ public:
 
   void saveSpeciesTreeKH(const std::string &outputFile);
   void saveSpeciesTreeBP(const std::string &outputFile);
+  
+  class Listener {
+  public:
+    /**
+     *  If the object is attached to a SpeciesSearchState, 
+     *  this callback will be called when a better tree is found
+     */
+    virtual void betterTreeCallback() = 0;
+  };
+
+  void addListener(Listener *listener) {_listeners.push_back(listener);}
+
+private:
+  std::vector<Listener *> _listeners;
 };
 
 class SpeciesSearchCommon {

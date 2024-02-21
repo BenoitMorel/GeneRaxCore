@@ -132,6 +132,9 @@ void SpeciesSearchState::betterTreeCallback(double ll, PerFamLL &perFamLL)
   speciesTree.saveToFile(pathToBestSpeciesTree, masterRankOnly);
   bestLL = ll;
   khBoots.newMLTree(perFamLL);
+  for (auto listener: _listeners) {
+    listener->betterTreeCallback();
+  }
 }
 
 void SpeciesSearchState::betterLikelihoodCallback(double ll, PerFamLL &perFamLL)

@@ -65,6 +65,7 @@ void SpeciesTree::onSpeciesTreeChange(const std::unordered_set<corax_rnode_t *> 
     listener->onSpeciesTreeChange(nodesToInvalidate);
   }
   _speciesTree.onSpeciesTreeChange(nodesToInvalidate);
+  _datedTree.reorderFromBranchLengths(); // make sure the dates still make sense
 }
   
 static void setRootAux(SpeciesTree &speciesTree, corax_rnode_t *root) {

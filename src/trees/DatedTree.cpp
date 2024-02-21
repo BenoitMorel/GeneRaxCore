@@ -4,10 +4,10 @@
 #include <maths/Random.hpp>
 
 DatedTree::DatedTree(PLLRootedTree *rootedTree, bool fromBL):
-  _rootedTree(rootedTree)
+  _rootedTree(*rootedTree)
 {
   if (fromBL) {
-    _orderedSpeciations = _rootedTree->getOrderedSpeciations();  
+    _orderedSpeciations = _rootedTree.getOrderedSpeciations();  
   } else {
     auto postOrder = rootedTree->getPostOrderNodes();
     for (auto it = postOrder.rbegin(); it != postOrder.rend(); ++it) {
@@ -17,12 +17,23 @@ DatedTree::DatedTree(PLLRootedTree *rootedTree, bool fromBL):
       }
     }
   }
-  _ranks.resize(rootedTree->getNodeNumber());
+  updateRanksFromSpeciationOrders();
+}
+  
+void DatedTree::reorderFromBranchLengths()
+{
+  _orderedSpeciations = _rootedTree.getOrderedSpeciations();
+  updateRanksFromSpeciationOrders();
+}
+  
+void DatedTree::updateRanksFromSpeciationOrders()
+{
+  _ranks.resize(_rootedTree.getNodeNumber());
   unsigned int rank = 0;
   for (auto species: _orderedSpeciations) {
     _ranks[species->node_index] = rank++; 
   }
-  for (auto leaf: this->_rootedTree->getLeaves()) {
+  for (auto leaf: this->_rootedTree.getLeaves()) {
     _ranks[leaf->node_index] = rank;
   }
 }
@@ -31,7 +42,7 @@ DatedTree::DatedTree(PLLRootedTree *rootedTree, bool fromBL):
 void DatedTree::rescaleBranchLengths()
 {
   assert(isConsistent());
-  std::vector<double> heights(_rootedTree->getNodeNumber(), 0.0);
+  std::vector<double> heights(_rootedTree.getNodeNumber(), 0.0);
   double height = 0.0;
   
   for (auto node: _orderedSpeciations) {
@@ -45,7 +56,7 @@ void DatedTree::rescaleBranchLengths()
     height = _ranks[e];
   }
   height += 1.0;
-  for (auto leaf: _rootedTree->getLeaves()) {
+  for (auto leaf: _rootedTree.getLeaves()) {
     auto p = leaf->parent->node_index;
     leaf->length = height - double(_ranks[p]);
   }
@@ -102,7 +113,7 @@ bool DatedTree::isConsistent() const
     }
   }
   // check that the ranks are consistent with the tree structure
-  for (auto node: _rootedTree->getNodes()) {
+  for (auto node: _rootedTree.getNodes()) {
     if (node->parent) {
       auto p = node->parent->node_index;
       auto e = node->node_index;
@@ -143,7 +154,7 @@ bool DatedTree::canTransferUnderRelDated(unsigned int nodeIndexFrom,
       unsigned int nodeIndexTo) const
 {
   // father of from is before to
-  auto from = _rootedTree->getNode(nodeIndexFrom);
+  auto from = _rootedTree.getNode(nodeIndexFrom);
   if (!from->parent) {
     return true;
   }
@@ -154,7 +165,7 @@ bool DatedTree::canTransferUnderRelDated(unsigned int nodeIndexFrom,
 void DatedTree::randomize()
 {
   std::vector<corax_rnode_t *> toAdd;
-  toAdd.push_back(_rootedTree->getRoot());
+  toAdd.push_back(_rootedTree.getRoot());
   unsigned int currentRank = 0;
   while (toAdd.size()) {
     unsigned int i = Random::getInt() % toAdd.size();

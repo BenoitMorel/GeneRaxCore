@@ -8,10 +8,10 @@ public:
   DatedTree(PLLRootedTree *rootedTree, bool fromBL = true);
   
 
-
+  void reorderFromBranchLengths();
   void rescaleBranchLengths();
 
-  PLLRootedTree &getRootedTree() const {return *_rootedTree;}
+  PLLRootedTree &getRootedTree() const {return _rootedTree;}
   const std::vector<corax_rnode_s *> &getOrderedSpeciations() const {return _orderedSpeciations;}
   unsigned int getRank(unsigned int nodeIndex) const {return _ranks[nodeIndex];}
   const std::vector<unsigned int> &getOrderedSpeciesRanks() const {return _ranks;}
@@ -42,7 +42,9 @@ public:
    */
   size_t getOrderingHash(size_t startingHash = 42) const;
 private:
-  PLLRootedTree *_rootedTree;
+  void updateRanksFromSpeciationOrders();
+  
+  PLLRootedTree &_rootedTree;
  
   // internal nodes, from the root to the most recent speciation 
   std::vector<corax_rnode_s *> _orderedSpeciations;
