@@ -116,6 +116,8 @@ void PerFamilyDTLOptimizer::optimizeDTLRates(JointTree &jointTree, RecOpt method
     break;
   case RecOpt::None:
     break;
+  default:
+    assert(false);
   }
 }
 
@@ -132,6 +134,8 @@ void PerFamilyDTLOptimizer::optimizeDLRates(JointTree &jointTree, RecOpt method)
     break;
   case RecOpt::None:
     break;
+  default:
+    assert(false);
   }
 }
 
