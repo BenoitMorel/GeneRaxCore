@@ -33,6 +33,7 @@ static bool lineSearchParameters(FunctionToOptimize &function,
   bool noImprovement = true;
   if (settings.verbose) {
     Logger::info << "lineSearch from ll=" << currentRates.getScore()  << std::endl;
+    Logger::info << "gradient = " << gradient << std::endl;
   }
   while (alpha > minAlpha) {
     Parameters normalizedGradient(gradient);
@@ -278,7 +279,7 @@ Parameters DTLOptimizer::optimizeParametersGlobalDTL(PerCoreEvaluations &evaluat
 {
   unsigned int freeParameters = 0;
   if (evaluations.size()) {
-    freeParameters = Enums::freeParameters(evaluations[0]->getRecModel());
+    freeParameters = evaluations[0]->getRecModelInfo().modelFreeParameters();
   }
   ParallelContext::maxUInt(freeParameters);
   if (freeParameters == 0) {
@@ -308,7 +309,7 @@ Parameters DTLOptimizer::optimizeParametersGlobalDTL(PerCoreEvaluations &evaluat
     startingRates.push_back(Parameters(0.1, 0.2, 0.1));
     startingRates.push_back(Parameters(0.01, 0.01, 0.01));
   } else {
-    startingRates.push_back(Parameters(0.5, 0.5, 0.2, 0.0));
+    startingRates.push_back(Parameters(0.5, 0.5, 0.2, 0.01));
     startingRates.push_back(Parameters(0.1, 0.2, 0.1, 0.1));
     startingRates.push_back(Parameters(0.2, 0.2, 0.0, 0.1));
     startingRates.push_back(Parameters(0.01, 0.01, 0.01, 0.01));

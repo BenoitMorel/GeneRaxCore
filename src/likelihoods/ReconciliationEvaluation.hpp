@@ -83,6 +83,7 @@ public:
       std::vector< std::shared_ptr<Scenario> > &scenarios);
 
   RecModel getRecModel() const {return _recModelInfo.model;}
+  const RecModelInfo &getRecModelInfo() const {return _recModelInfo;}
   
 private:
   PLLRootedTree &_speciesTree;

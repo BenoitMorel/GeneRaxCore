@@ -154,11 +154,14 @@ struct RecModelInfo {
       assert(str.size() == 1);
       res.push_back(str[0]);
     }
+    if (originationStrategy == OriginationStrategy::OPTIMIZE) {
+      res.push_back('O');
+    }
     return res;
   }
 
   unsigned int modelFreeParameters() const {
-    return Enums::freeParameters(model);
+    return Enums::freeParameters(model) + (originationStrategy == OriginationStrategy::OPTIMIZE ? 1 : 0);
   }
  
   /*

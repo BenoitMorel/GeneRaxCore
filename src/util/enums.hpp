@@ -49,7 +49,7 @@ enum class TransferConstaint {
 };
 
 enum class OriginationStrategy {
-  UNIFORM, ROOT, LCA
+  UNIFORM, ROOT, LCA, OPTIMIZE
 };
 
 /*
@@ -217,6 +217,8 @@ public:
       return "ROOT";
     case OriginationStrategy::LCA:
       return "LCA";
+    case OriginationStrategy::OPTIMIZE:
+      return "OPTIMIZE";
     }
     exit(41);
   }
@@ -229,6 +231,8 @@ public:
       return OriginationStrategy::ROOT;
     }  else if (str == "LCA") {
       return OriginationStrategy::LCA;
+    }  else if (str == "OPTIMIZE") {
+      return OriginationStrategy::OPTIMIZE;
     } else {
       Logger::info << "Invalid origination strategy " << str << std::endl;
       exit(41);
