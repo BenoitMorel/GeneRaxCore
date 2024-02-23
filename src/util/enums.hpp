@@ -26,6 +26,17 @@ enum class RecOpt {
   Grid, Simplex, Gradient, LBFGSB, GSL, None
 };
 
+/**
+ *  Describe which (DTL) parameters are shared or can take different values:
+ *  GLOBAL: all rates are shared among all families and species
+ *  ORIGINATION_PER_SPECIES: each species has a different set of origination probabilities. The other rates are global
+ *  PER_SPECIES: each species has a different set of rates, common to all families
+ *  PER_FAMILY: each species has a different set of rates, common to all species
+ *  CUSTOM: the user can describe the parametrization in a file. Each families have the same set of rates
+ */
+enum class ModelParametrization {
+  GLOBAL, PER_SPECIES, ORIGINATION_PER_SPECIES, PER_FAMILY, CUSTOM
+};
 
 /*
  * Gene tree search mode
@@ -160,6 +171,21 @@ public:
         break;
     }
     return res;
+  }
+
+  static ModelParametrization strToModelParametrization(const std::string &str) 
+  {
+    if ("global" == str) {
+      return ModelParametrization::GLOBAL;
+    } else if (str == "per-species") {
+      return ModelParametrization::PER_SPECIES;
+    } else if (str == "origination-per-species") {
+      return ModelParametrization::ORIGINATION_PER_SPECIES;
+    } else if (str == "per-family") {
+      return ModelParametrization::PER_FAMILY;
+    } else {
+      return ModelParametrization::CUSTOM;
+    }
   }
 
   /**
