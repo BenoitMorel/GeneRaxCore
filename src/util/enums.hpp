@@ -175,13 +175,13 @@ public:
 
   static ModelParametrization strToModelParametrization(const std::string &str) 
   {
-    if ("global" == str) {
+    if ("GLOBAL" == str) {
       return ModelParametrization::GLOBAL;
-    } else if (str == "per-species") {
+    } else if (str == "PER-SPECIES") {
       return ModelParametrization::PER_SPECIES;
-    } else if (str == "origination-per-species") {
+    } else if (str == "ORIGINATION-PER-SPECIES") {
       return ModelParametrization::ORIGINATION_PER_SPECIES;
-    } else if (str == "per-family") {
+    } else if (str == "PER-FAMILY") {
       return ModelParametrization::PER_FAMILY;
     } else {
       return ModelParametrization::CUSTOM;
