@@ -423,7 +423,7 @@ static double gslEval (const gsl_vector *v, void *params)
   return -res;
 }
 
-static Parameters optimizeParametersGSL(FunctionToOptimize &function, 
+static Parameters optimizeParametersGSLSimplex(FunctionToOptimize &function, 
     const Parameters &startingParameters,
     OptimizationSettings settings)
 {
@@ -499,13 +499,13 @@ Parameters DTLOptimizer::optimizeParameters(FunctionToOptimize &function,
           startingParameters, 
           settings);
       break;
-    case RecOpt::GSL:
+    case RecOpt::GSL_SIMPLEX:
 #ifdef WITH_GSL
-      res = optimizeParametersGSL(function, 
+      res = optimizeParametersGSLSimplex(function, 
           startingParameters, 
           settings);
 #else
-      std::cerr << "Error, GSL routine not available" << std::endl;
+      std::cerr << "Error, GSL routine not available, please install GSL and recompile" << std::endl;
 #endif
       break;
     case RecOpt::Simplex:
