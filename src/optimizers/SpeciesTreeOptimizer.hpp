@@ -15,6 +15,7 @@
 #include <util/Constants.hpp>
 #include <util/types.hpp>
 #include <search/SpeciesSearchCommon.hpp>
+#include <util/Checkpoint.hpp>
 
 struct EvaluatedMove {
   unsigned int prune;
@@ -85,13 +86,14 @@ private:
 
 class SpeciesTreeOptimizer: public SpeciesTree::Listener {
 public:
-  SpeciesTreeOptimizer(const std::string speciesTreeFile, 
-      const Families &initialFamilies, 
+  SpeciesTreeOptimizer(const std::string speciesTreeFile,
+      const Families &initialFamilies,
       const RecModelInfo &recModelInfo,
       const Parameters &startingRates,
       bool userDTLRates,
       const std::string &outputDir,
-      const SpeciesTreeSearchParams &searchParams);
+      const SpeciesTreeSearchParams &searchParams,
+      bool checkpointEnabled = false);
   
   // forbid copy
   SpeciesTreeOptimizer(const SpeciesTreeOptimizer &) = delete;
@@ -135,6 +137,7 @@ private:
   unsigned int _okForClades;
   unsigned int _koForClades;
   SpeciesSearchState _searchState;
+  Checkpoint _checkpoint;
 private:
   void _computeAllGeneClades();
   unsigned int _unsupportedCladesNumber();
@@ -144,5 +147,7 @@ private:
   double transferSearch();
   double sprSearch(unsigned int radius);
   std::vector<double> _getSupport();
+  void _saveHybridCheckpoint(unsigned int iteration);
+  bool _restoreHybridCheckpoint(unsigned int &iteration);
   
 };
