@@ -10,6 +10,8 @@
 #include <DistanceMethods/MiniNJ.hpp>
 #include <DistanceMethods/NeighborJoining.hpp>
 #include <cstdio>
+#include <iomanip>
+#include <limits>
 #include <support/ICCalculator.hpp>
 #include <search/SpeciesSPRSearch.hpp>
 #include <search/SpeciesTransferSearch.hpp>
@@ -25,13 +27,14 @@ static std::unique_ptr<SpeciesTree> makeSpeciesTree(const std::string &speciesTr
 
 }
 
-SpeciesTreeOptimizer::SpeciesTreeOptimizer(const std::string speciesTreeFile, 
-    const Families &initialFamilies, 
+SpeciesTreeOptimizer::SpeciesTreeOptimizer(const std::string speciesTreeFile,
+    const Families &initialFamilies,
     const RecModelInfo &recModelInfo,
     const Parameters &startingRates,
     bool userDTLRates,
     const std::string &outputDir,
-    const SpeciesTreeSearchParams &searchParams):
+    const SpeciesTreeSearchParams &searchParams,
+    bool checkpointEnabled):
   _speciesTree(makeSpeciesTree(speciesTreeFile,
         initialFamilies)),
   _geneTrees(std::make_unique<PerCoreGeneTrees>(initialFamilies, true)),
@@ -43,9 +46,10 @@ SpeciesTreeOptimizer::SpeciesTreeOptimizer(const std::string speciesTreeFile,
   _searchParams(searchParams),
   _okForClades(0),
   _koForClades(0),
-  _searchState(*_speciesTree, 
+  _searchState(*_speciesTree,
       Paths::getSpeciesTreeFile(_outputDir, "inferred_species_tree.newick"),
-      _geneTrees->getTrees().size())
+      _geneTrees->getTrees().size()),
+  _checkpoint(outputDir, checkpointEnabled)
 {
 
   _modelRates.info.perFamilyRates = false; // we set it back a few
@@ -92,25 +96,36 @@ void SpeciesTreeOptimizer::optimize(SpeciesSearchStrategy strategy)
      *  SPR search, until one does not find
      *  a better tree. Run each at least once.
      */
-    if (!_searchState.farFromPlausible) {
-      _searchState.bestLL = _evaluator.optimizeModelRates();
-      computeRecLikelihood();
-      rootSearch(_searchParams.rootSmallRadius, false);
-    }
-    do {
-      if (index++ % 2 == 0) {
-        transferSearch();
+    {
+      bool resumedFromIteration = _restoreHybridCheckpoint(index);
+      if (!resumedFromIteration) {
+        if (!_searchState.farFromPlausible) {
+          _searchState.bestLL = _evaluator.optimizeModelRates();
+          computeRecLikelihood();
+          rootSearch(_searchParams.rootSmallRadius, false);
+        }
       } else {
-        sprSearch(_searchParams.sprRadius);
+        // Initialize hash2 to the current tree hash so that
+        // convergence is detected if the first resumed iteration
+        // does not change the tree (matching fresh-run behavior)
+        hash2 = _speciesTree->getHash();
       }
-      if (!_searchState.farFromPlausible) {
-        rootSearch(_searchParams.rootSmallRadius, false);
+      do {
+        if (index++ % 2 == 0) {
+          transferSearch();
+        } else {
+          sprSearch(_searchParams.sprRadius);
+        }
+        if (!_searchState.farFromPlausible) {
+          rootSearch(_searchParams.rootSmallRadius, false);
+        }
+        hash1 = _speciesTree->getHash();
+        _saveHybridCheckpoint(index);
       }
-      hash1 = _speciesTree->getHash();
+      while(testAndSwap(hash1, hash2));
+      _searchState.bestLL = _evaluator.optimizeModelRates(true);
+      rootSearch(_searchParams.rootBigRadius, true);
     }
-    while(testAndSwap(hash1, hash2));
-    _searchState.bestLL = _evaluator.optimizeModelRates(true);
-    rootSearch(_searchParams.rootBigRadius, true);
     break;
   case SpeciesSearchStrategy::REROOT:
     rootSearch(_searchParams.rootBigRadius, true);
@@ -447,6 +462,59 @@ void SpeciesTreeLikelihoodEvaluator::getTransferInformation(SpeciesTree &species
     reconciliationSamples,
     perSpeciesEvents,
     forceTransfers);
+}
+
+void SpeciesTreeOptimizer::_saveHybridCheckpoint(unsigned int iteration)
+{
+  if (!_checkpoint.isEnabled()) {
+    return;
+  }
+  _checkpoint.save("hybrid_iteration", static_cast<int>(iteration));
+  _checkpoint.save("bestLL", _searchState.bestLL);
+  // Save the current species tree for iteration-level resume
+  saveCurrentSpeciesTreeId();
+  saveCurrentSpeciesTreeId("checkpoint_species_tree.newick");
+  // Save model rates with full precision so they can be exactly restored
+  auto ratesFile = FileSystem::joinPaths(_outputDir, "checkpoint_rates.txt");
+  {
+    ParallelOfstream os(ratesFile);
+    os << std::setprecision(std::numeric_limits<double>::max_digits10);
+    for (auto &r: _modelRates.rates.getVector()) {
+      os << r << " ";
+    }
+  }
+  Logger::timed << "[Checkpoint] Saved at iteration " << iteration
+    << " (LL=" << _searchState.bestLL << ")" << std::endl;
+}
+
+bool SpeciesTreeOptimizer::_restoreHybridCheckpoint(unsigned int &iteration)
+{
+  if (!_checkpoint.isEnabled() || !_checkpoint.has("hybrid_iteration")) {
+    return false;
+  }
+  iteration = static_cast<unsigned int>(
+      _checkpoint.getInt("hybrid_iteration"));
+  // Restore model rates
+  auto ratesFile = FileSystem::joinPaths(_outputDir, "checkpoint_rates.txt");
+  if (!FileSystem::exists(ratesFile)) {
+    Logger::timed << "[Checkpoint] No saved rates found, starting fresh"
+      << std::endl;
+    return false;
+  }
+  _modelRates.rates.load(ratesFile);
+  unsigned int i = 0;
+  for (auto &evaluation: _evaluations) {
+    evaluation->setRates(_modelRates.getRates(i++));
+  }
+  // Compute the likelihood with restored rates to establish bestLL.
+  // Note: the resumed evaluator may compute a slightly different LL
+  // than the original run for the same tree+rates, because internal
+  // evaluator state (CLVs) cannot be fully serialized. This is
+  // expected and the search will still converge to a good result.
+  _searchState.bestLL = computeRecLikelihood();
+  Logger::timed << "[Checkpoint] Resuming HYBRID from iteration " << iteration
+    << " (LL=" << _searchState.bestLL << ")" << std::endl;
+  return true;
 }
 
 void SpeciesTreeLikelihoodEvaluator::pushRollback() 
