@@ -44,7 +44,7 @@ protected:
   }
   // overload from parent
   virtual void recomputeSpeciesProbabilities() {}
-  virtual double getLikelihoodFactor() const {return 1.0;}
+  virtual double getLikelihoodFactor() const override {return 1.0;}
   // overload from parent
   virtual void computeGeneRootLikelihood(corax_unode_t *virtualRoot);
   // overlead from parent

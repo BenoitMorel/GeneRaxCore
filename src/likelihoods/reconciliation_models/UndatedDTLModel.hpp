@@ -47,7 +47,7 @@ protected:
   virtual REAL getGeneRootLikelihood(corax_unode_t *root, corax_rnode_t *speciesRoot) {
     return _dtlclvs[root->node_index + this->_maxGeneId + 1]._uq[speciesRoot->node_index];
   }
-  virtual REAL getLikelihoodFactor() const;
+  virtual REAL getLikelihoodFactor() const override;
   virtual void computeProbability(corax_unode_t *geneNode, corax_rnode_t *speciesNode, 
       REAL &proba,
       bool isVirtualRoot = false,

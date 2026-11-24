@@ -88,7 +88,7 @@ public:
   virtual void enableMADRooting(bool enable);
   virtual corax_unode_t *computeMLRoot();
 
-  virtual REAL getLikelihoodFactor() {return REAL(1.0);}
+  virtual REAL getLikelihoodFactor() const {return REAL(1.0);}
 
 private:
   void mapGenesToSpecies();
