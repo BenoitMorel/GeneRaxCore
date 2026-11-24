@@ -45,7 +45,7 @@ protected:
   }
 
   // overload from parent
-  virtual REAL getLikelihoodFactor() const {return REAL(1.0);}
+  virtual REAL getLikelihoodFactor() const override {return REAL(1.0);}
   // overload from parent
   virtual void recomputeSpeciesProbabilities(){};
   // overload from parent
